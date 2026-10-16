@@ -115,4 +115,4 @@ templates/wechat.html 微信复制模板
 - `lib/converter.js`、`lib/themes.js`、`lib/llm.js`、`lib/extract.js`、`templates/wechat.html` 为上游代码的移植/改编（在文件头已标注来源），并按 MIT 许可保留原始版权声明。
 - `extension.js` 与 `media/` 下的 UI 为本项目新写。
 
-完整许可见 [LICENSE](./LICENSE)。
+完整许可见项目根目录的 `LICENSE`（MIT）。
