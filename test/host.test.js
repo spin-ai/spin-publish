@@ -96,10 +96,10 @@ const wait = (ms = 80) => new Promise((r) => setTimeout(r, ms));
 const last = (t) => [...posted].reverse().find((m) => m.type === t);
 
 (async () => {
-  assert.ok(vscode.commands._cmds['md2any.preview'], 'preview 命令未注册');
-  assert.ok(vscode.commands._cmds['md2any.exportHtml'], 'exportHtml 命令未注册');
+  assert.ok(vscode.commands._cmds['smart-publisher.preview'], 'preview 命令未注册');
+  assert.ok(vscode.commands._cmds['smart-publisher.exportHtml'], 'exportHtml 命令未注册');
 
-  vscode.commands._cmds['md2any.preview']({ fsPath: mdPath });
+  vscode.commands._cmds['smart-publisher.preview']({ fsPath: mdPath });
   assert.ok(messageHandler, 'webview 消息处理器未注册');
   for (const ph of ['__NONCE__', '__CSP_SOURCE__', '__KATEX_URI__', '__HTML2CANVAS_URI__', '__PANEL_JS_URI__']) {
     assert.ok(!panelHtml.includes(ph), `占位符 ${ph} 未替换`);

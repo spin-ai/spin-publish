@@ -1,4 +1,4 @@
-/* md2any — webview 交互逻辑 */
+/* smart-publisher — webview 交互逻辑 */
 (function () {
   'use strict';
 

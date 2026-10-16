@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-项目名 `md2any`（上游原始项目为 `markdown2anything`）。
+项目名 `smart-publisher`（上游原始项目为 `markdown2anything`）。
 
 首个版本：基于 [markdown2anything](https://github.com/marsggbo/markdown2anything)（MIT）渲染内核的 VS Code 扩展复刻版。
 

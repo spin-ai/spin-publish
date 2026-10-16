@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * md2any — 扩展宿主入口
+ * smart-publisher — 扩展宿主入口
  *
  * 功能：
  *   - 侧边 Webview 预览面板：实时渲染 Markdown（公式 / 代码 / 图片 / 表格）
@@ -33,7 +33,7 @@ const { THEMES, DEFAULT_THEME_ID, getTheme } = require('./lib/themes');
 const llm = require('./lib/llm');
 const { extractCopy } = require('./lib/extract');
 
-const VIEW_TYPE = 'md2any.preview';
+const VIEW_TYPE = 'smart-publisher.preview';
 const STATE_THEME = 'm2a.theme';
 const STATE_PROFILES = 'm2a.llm.profiles';
 const STATE_ACTIVE_PROFILE = 'm2a.llm.activeProfile';
@@ -44,7 +44,7 @@ const panels = new Map();
 let extContext = null;
 
 function log(msg) {
-  console.log(`[md2any] ${msg}`);
+  console.log(`[smart-publisher] ${msg}`);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -55,8 +55,8 @@ function activate(context) {
   extContext = context;
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('md2any.preview', (uri) => openPreview(uri)),
-    vscode.commands.registerCommand('md2any.exportHtml', (uri) => exportHtmlCommand(uri)),
+    vscode.commands.registerCommand('smart-publisher.preview', (uri) => openPreview(uri)),
+    vscode.commands.registerCommand('smart-publisher.exportHtml', (uri) => exportHtmlCommand(uri)),
   );
 
   // 编辑内容变化 → 增量刷新预览
@@ -104,7 +104,7 @@ function getThemeId() {
 
 function setThemeId(id) {
   extContext.globalState.update(STATE_THEME, id);
-  const cfg = vscode.workspace.getConfiguration('md2any');
+  const cfg = vscode.workspace.getConfiguration('smart-publisher');
   // 同步回设置，方便下次对任意文件使用
   cfg.update('theme', id, vscode.ConfigurationTarget.Global).then(() => {}, () => {});
 }
@@ -122,7 +122,7 @@ function renderDoc(mdPath) {
 }
 
 function getTemplatePath() {
-  const cfg = vscode.workspace.getConfiguration('md2any');
+  const cfg = vscode.workspace.getConfiguration('smart-publisher');
   const name = cfg.get('template', 'wechat') || 'wechat';
   const mdDir = vscode.window.activeTextEditor
     ? path.dirname(vscode.window.activeTextEditor.document.uri.fsPath || '')
@@ -145,7 +145,7 @@ function getTemplatePath() {
 function openPreview(uri) {
   const resolved = resolveUri(uri);
   if (!resolved) {
-    vscode.window.showWarningMessage('请先打开一个 Markdown 文件，再使用 md2any。');
+    vscode.window.showWarningMessage('请先打开一个 Markdown 文件，再使用 smart-publisher。');
     return;
   }
   const mdPath = resolved.fsPath;
@@ -327,7 +327,7 @@ async function handleMessage(mdPath, panel, msg) {
         const theme = getTheme(getThemeId());
         const mode = msg.mode === 'adaptive' ? 'adaptive' : 'classic';
         const useThemeAccent = vscode.workspace
-          .getConfiguration('md2any')
+          .getConfiguration('smart-publisher')
           .get('xhs.adaptiveUseTheme', true);
         let css = '';
         let containerClass = 'article-wrapper';
@@ -388,7 +388,7 @@ async function handleMessage(mdPath, panel, msg) {
           panel.webview.postMessage({ type: 'copyResult', platform, source: 'local', data });
           break;
         }
-        const cfg = vscode.workspace.getConfiguration('md2any');
+        const cfg = vscode.workspace.getConfiguration('smart-publisher');
         const withBody = cfg.get('llm.sendFullText', true);
         const config = await getActiveLlmConfig();
         const context = llm.buildContext({
@@ -496,7 +496,7 @@ function exportHtmlFile(mdPath) {
   const { bodyHtml } = renderDoc(mdPath);
   const html = buildFullHtml(bodyHtml, getTemplatePath());
   const base = path.basename(mdPath, path.extname(mdPath));
-  const cfgDir = vscode.workspace.getConfiguration('md2any').get('outputPath', '');
+  const cfgDir = vscode.workspace.getConfiguration('smart-publisher').get('outputPath', '');
   let outDir;
   if (cfgDir) {
     const ws = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
@@ -585,7 +585,7 @@ function getProfiles() {
 async function ensureDefaultProfile() {
   const profiles = getProfiles();
   if (profiles.length) return profiles;
-  const cfg = vscode.workspace.getConfiguration('md2any');
+  const cfg = vscode.workspace.getConfiguration('smart-publisher');
   const p = {
     id: 'p' + Date.now().toString(36),
     name: '默认',
@@ -602,7 +602,7 @@ async function getActiveLlmConfig(profileId) {
   const activeId = profileId || extContext.globalState.get(STATE_ACTIVE_PROFILE, '');
   const p = profiles.find((x) => x.id === activeId) || profiles[0];
   if (!p) {
-    const cfg = vscode.workspace.getConfiguration('md2any');
+    const cfg = vscode.workspace.getConfiguration('smart-publisher');
     return { id: '', name: '默认', baseUrl: cfg.get('llm.baseUrl', ''), model: cfg.get('llm.model', ''), apiKey: '' };
   }
   const apiKey = await extContext.secrets.get(SECRET_PREFIX + p.id) || '';
@@ -625,7 +625,7 @@ async function saveLlmProfile(msg) {
   }
   await extContext.globalState.update(STATE_ACTIVE_PROFILE, p.id);
   // 同步设置项，方便其他入口读取
-  const cfg = vscode.workspace.getConfiguration('md2any');
+  const cfg = vscode.workspace.getConfiguration('smart-publisher');
   await cfg.update('llm.baseUrl', p.baseUrl, vscode.ConfigurationTarget.Global).then(() => {}, () => {});
   await cfg.update('llm.model', p.model, vscode.ConfigurationTarget.Global).then(() => {}, () => {});
   return p;

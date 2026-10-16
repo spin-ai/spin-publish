@@ -1,6 +1,6 @@
-# md2any (VS Code)
+# smart-publisher (VS Code)
 
-> 扩展 ID：`spin.md2any`　·　命令面板搜索 `md2any`
+> 扩展 ID：`spin.smart-publisher`　·　命令面板搜索 `smart-publisher`
 
 **写一次，发到所有平台。**
 
@@ -79,14 +79,14 @@ code --install-extension markdown-anything-1.0.0.vsix
 
 | 配置 | 默认 | 说明 |
 | --- | --- | --- |
-| `md2any.theme` | `claude` | 默认主题 |
-| `md2any.outputPath` | `""` | 导出 HTML 目录（相对工作区；空 = md 同目录） |
-| `md2any.template` | `wechat` | 微信复制模板名（对应 `templates/<name>.html`，可放工作区 `templates/` 覆盖） |
-| `md2any.llm.baseUrl` | `https://api.deepseek.com/v1` | LLM 接口地址 |
-| `md2any.llm.model` | `deepseek-chat` | 模型名 |
-| `md2any.llm.sendFullText` | `true` | 是否把正文一起发给模型 |
-| `md2any.xhs.exportMode` | `classic` | 长图默认模式 |
-| `md2any.xhs.adaptiveUseTheme` | `true` | 自适应模式是否跟随主题色（否则固定小红书红 `#ff2442`） |
+| `smart-publisher.theme` | `claude` | 默认主题 |
+| `smart-publisher.outputPath` | `""` | 导出 HTML 目录（相对工作区；空 = md 同目录） |
+| `smart-publisher.template` | `wechat` | 微信复制模板名（对应 `templates/<name>.html`，可放工作区 `templates/` 覆盖） |
+| `smart-publisher.llm.baseUrl` | `https://api.deepseek.com/v1` | LLM 接口地址 |
+| `smart-publisher.llm.model` | `deepseek-chat` | 模型名 |
+| `smart-publisher.llm.sendFullText` | `true` | 是否把正文一起发给模型 |
+| `smart-publisher.xhs.exportMode` | `classic` | 长图默认模式 |
+| `smart-publisher.xhs.adaptiveUseTheme` | `true` | 自适应模式是否跟随主题色（否则固定小红书红 `#ff2442`） |
 
 ---
 
