@@ -12,6 +12,11 @@ test.md
 *.vsix
 package-lock.json
 
+# ── 源码已打进 dist/extension.js，不再随包发布 ────────────────────
+extension.js
+lib/
+scripts/
+
 # ── 开发专用 node_modules（vsce 已排除 devDependencies，这里再兜底）──
 node_modules/@vscode/
 node_modules/@azure/
@@ -21,24 +26,28 @@ node_modules/azure-devops-node-api/
 node_modules/.package-lock.json
 node_modules/.cache/
 
-# ── mathjax-full：只需 js/ ─────────────────────────────────────────
-node_modules/mathjax-full/es5/
-node_modules/mathjax-full/ts/
-node_modules/mathjax-full/components/
-node_modules/speech-rule-engine/
+# ── mathjax-full 已内联进 dist（devDependency，vsce 不会打包）───
 
-# ── highlight.js：只需 CommonJS + 两个主题 ─────────────────────────
+# ── highlight.js：JS 已内联进 dist，只需保留两个 styles CSS ─────
+node_modules/highlight.js/lib/
 node_modules/highlight.js/es/
 node_modules/highlight.js/scss/
-node_modules/highlight.js/styles/*.css
+node_modules/highlight.js/styles/**
 !node_modules/highlight.js/styles/github.css
 !node_modules/highlight.js/styles/github.min.css
+node_modules/highlight.js/types/
+node_modules/highlight.js/*.md
 
-# ── katex：只需 dist/ ──────────────────────────────────────────────
+# ── katex：只保留 dist/katex.min.css + dist/fonts ─────────────────
 node_modules/katex/src/
-node_modules/katex/dist/katex.mjs
+node_modules/katex/contrib/
 node_modules/katex/dist/contrib/
+node_modules/katex/types/
+node_modules/katex/node_modules/
+node_modules/katex/README.md
 node_modules/katex/dist/katex.min.js
+node_modules/katex/dist/katex.mjs
+node_modules/katex/dist/katex.css
 
 # ── html2canvas：只需 min 版 ───────────────────────────────────────
 node_modules/html2canvas/dist/lib/

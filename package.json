@@ -34,7 +34,7 @@
     "KaTeX",
     "preview"
   ],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:markdown",
     "onCommand:smart-publisher.preview",
@@ -147,21 +147,26 @@
     }
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "gray-matter": "^4.0.3",
     "highlight.js": "^11.9.0",
     "html2canvas": "^1.4.1",
+    "katex": "^0.16.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.9.2",
+    "cheerio": "^1.0.0-rc.12",
+    "esbuild": "^0.28.2",
+    "gray-matter": "^4.0.3",
     "juice": "^9.1.0",
-    "katex": "^0.16.0",
     "marked": "^11.1.1",
     "mathjax-full": "^3.2.1"
   },
-  "devDependencies": {
-    "@vscode/vsce": "^3.9.2"
-  },
   "scripts": {
+    "build": "node scripts/build.js",
+    "vscode:prepublish": "npm run build",
     "test": "node test/render.test.js && node test/host.test.js",
+    "test:bundle": "npm run build && node test/render.test.js && SP_EXT_ENTRY=./dist/extension.js node test/host.test.js",
+    "test:package": "node scripts/verify-package.js",
     "package": "vsce package --allow-missing-repository",
-    "install-ext": "vsce package && code --install-extension smart-publisher-1.0.0.vsix"
+    "install-ext": "npm run package -- --out smart-publisher-1.0.0.vsix && code --install-extension smart-publisher-1.0.0.vsix"
   }
 }

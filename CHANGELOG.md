@@ -23,3 +23,10 @@
 - 去掉 Playwright 自动发布、PPT/Word 导出、封面生成、Electron/网页/CLI 形态
 - 长图导出改为纯 webview 内 html2canvas，无需下载 Chromium
 - 重新实现 Webview UI（跟随 VS Code 主题变量）
+
+### 构建
+
+- 引入 esbuild 打包：`extension.js` + `lib/` + `marked/cheerio/juice/gray-matter/mathjax-full` → 单文件 `dist/extension.js`
+- `mathjax-full` 通过 `define(PACKAGE_VERSION)` 旁路其 `eval('__dirname')` 版本探测，得以安全内联
+- 只有 `katex`（需 dist CSS+字体）与 `html2canvas`（webview 静态资源）保留在 dependencies；vsix 从 3086 个文件 / 6.45 MB 降到 142 个文件 / 3.01 MB
+- 新增 `npm run test:package`：解压 VSIX 后对发布产物跑测试，防止 .vscodeignore 误删运行时资源

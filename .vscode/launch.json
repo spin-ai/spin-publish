@@ -5,6 +5,7 @@
       "name": "运行扩展（F5）",
       "type": "extensionHost",
       "request": "launch",
+      "preLaunchTask": "npm: build",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}"
       ]

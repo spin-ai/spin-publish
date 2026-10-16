@@ -40,13 +40,20 @@
 
 ```bash
 npm install
-npm run package          # 生成 markdown-anything-1.0.0.vsix
-code --install-extension markdown-anything-1.0.0.vsix
+npm run package          # 先用 esbuild 打包，再生成 smart-publisher-1.0.0.vsix
+code --install-extension smart-publisher-1.0.0.vsix
 ```
 
 ### 开发调试
 
-用 VS Code 打开本目录，按 `F5` 启动「扩展开发宿主」，打开任意 `.md` 文件即可。
+用 VS Code 打开本目录，按 `F5` 启动「扩展开发宿主」（会自动先 `npm run build`），打开任意 `.md` 文件即可。
+
+```bash
+npm run build        # esbuild 打包源码 → dist/extension.js
+npm test             # 渲染内核 + 扩展宿主测试（跑源码）
+npm run test:bundle  # 同上，但跑打包后的 dist/extension.js
+npm run test:package # 打包 VSIX → 解压 → 对发布产物跑测试（验证 .vscodeignore 没误删资源）
+```
 
 ---
 
@@ -103,8 +110,15 @@ media/
   panel.html          Webview 模板
   panel.css           Webview 样式（跟随 VS Code 主题变量）
   panel.js            Webview 交互 + html2canvas 长图切片
-templates/wechat.html 微信复制模板
+scripts/
+  build.js            esbuild 打包：extension.js + lib/ → dist/extension.js
+  verify-package.js   打包 VSIX 并验证发布产物
+templates/
+  wechat.html         微信复制模板
+dist/extension.js     运行时入口（构建产物，已内联 marked/cheerio/juice/mathjax 等）
 ```
+
+> 依赖拆分：`mathjax-full`/`cheerio`/`juice`/`marked`/`gray-matter` 已被打进 `dist/`，因此放在 devDependencies；只有 `katex`（需 dist CSS+字体）和 `html2canvas`（webview 静态资源）留在 dependencies。vsix 从 3086 个文件 / 6.45 MB 降到 142 个文件 / 3.01 MB。
 
 ---
 

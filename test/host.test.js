@@ -9,11 +9,13 @@ const os = require('os');
 const assert = require('assert');
 const Module = require('module');
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = process.env.SP_EXT_ROOT
+  ? path.resolve(process.env.SP_EXT_ROOT)
+  : path.join(__dirname, '..');
 
 // ── 测试用 Markdown ──
 const mdPath = path.join(os.tmpdir(), 'm2a-host-test.md');
-fs.writeFileSync(mdPath, '# 标题\n\n公式 $E=mc^2$\n\n$$\nL = -\\frac{1}{N}\\sum y_i\n$$\n\n```js\nconst a = 1;\n```\n', 'utf8');
+fs.writeFileSync(mdPath, '---\ntitle: FM 标题\n---\n\n# 标题\n\n公式 $E=mc^2$\n\n$$\nL = -\\frac{1}{N}\\sum y_i\n$$\n\n```js\nconst a = 1;\n```\n', 'utf8');
 
 // ── mock vscode ──
 const posted = [];
@@ -89,7 +91,7 @@ Module._load = function (request) {
   return origLoad.apply(this, arguments);
 };
 
-const ext = require(path.join(ROOT, 'extension.js'));
+const ext = require(process.env.SP_EXT_ENTRY ? path.resolve(ROOT, process.env.SP_EXT_ENTRY) : path.join(ROOT, 'extension.js'));
 ext.activate(context);
 
 const wait = (ms = 80) => new Promise((r) => setTimeout(r, ms));
@@ -104,10 +106,24 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
   for (const ph of ['__NONCE__', '__CSP_SOURCE__', '__KATEX_URI__', '__HTML2CANVAS_URI__', '__PANEL_JS_URI__']) {
     assert.ok(!panelHtml.includes(ph), `占位符 ${ph} 未替换`);
   }
-  console.log('✓ 面板 HTML 占位符全部替换');
+  // 运行时静态资源必须真实存在（验证 .vscodeignore 没有误删）
+  for (const rel of [
+    'media/panel.html', 'media/panel.css', 'media/panel.js',
+    'templates/wechat.html',
+    'node_modules/katex/dist/katex.min.css',
+    'node_modules/katex/dist/katex.js',
+    'node_modules/katex/dist/fonts/KaTeX_Main-Regular.woff2',
+    'node_modules/highlight.js/styles/github.css',
+    'node_modules/highlight.js/styles/github.min.css',
+    'node_modules/html2canvas/dist/html2canvas.min.js',
+  ]) {
+    assert.ok(fs.existsSync(path.join(ROOT, rel)), `缺少运行时资源: ${rel}`);
+  }
+  console.log('✓ 面板 HTML 占位符全部替换 + 运行时资源齐备');
 
   await messageHandler({ type: 'ready' }); await wait();
   assert.strictEqual(last('themeList').themes.length, 14, '主题列表数量不对');
+  assert.strictEqual(last('render').title, 'FM 标题', 'front matter 标题解析失败');
   assert.ok(last('render').bodyHtml.includes('katex'), 'render 未包含公式');
   assert.ok(last('llmConfig'), '未见 llmConfig');
   console.log('✓ ready → themeList / llmConfig / render');
