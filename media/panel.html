@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    img-src __CSP_SOURCE__ data: https: http:;
+    style-src __CSP_SOURCE__ 'unsafe-inline';
+    font-src __CSP_SOURCE__ data:;
+    script-src 'nonce-__NONCE__';
+    connect-src https: http:;
+  ">
+  <title>md2any</title>
+
+  <link rel="stylesheet" href="__KATEX_URI__/katex.min.css">
+  <link rel="stylesheet" href="__HL_URI__">
+  <link rel="stylesheet" href="__PANEL_CSS_URI__">
+  <script nonce="__NONCE__" src="__HTML2CANVAS_URI__"></script>
+</head>
+<body>
+  <!-- ── 工具栏 ─────────────────────────────────────────── -->
+  <header class="toolbar">
+    <div class="tb-row tb-title-row">
+      <span class="doc-title" id="doc-title">md2any</span>
+      <span class="word-count" id="word-count"></span>
+      <span class="spacer"></span>
+      <span class="ver">v__VERSION__</span>
+    </div>
+    <div class="tb-row tb-actions">
+      <button class="btn btn-primary" id="btn-copy-wechat" title="复制带内联样式的富文本，粘贴到公众号编辑器">📋 复制微信</button>
+      <button class="btn" id="btn-copy-zhihu" title="复制为知乎友好的富文本（公式用知乎图床）">📋 复制知乎</button>
+      <button class="btn" id="btn-copy-xhs" title="复制为小红书长文编辑器友好的富文本">📋 复制小红书</button>
+      <button class="btn" id="btn-export-html" title="导出为独立 HTML 文件">💾 导出 HTML</button>
+      <button class="btn" id="btn-xhs" title="导出小红书 1080×1440 长图">📱 长图导出</button>
+      <button class="btn" id="btn-ai" title="用 LLM 生成小红书 / Twitter 文案">🤖 AI 文案</button>
+      <button class="btn" id="btn-llm" title="配置 LLM 接口">⚙️ LLM</button>
+      <span class="spacer"></span>
+      <select id="theme-select" title="切换主题"></select>
+      <button class="btn btn-icon" id="btn-zoom-out" title="缩小">−</button>
+      <button class="btn btn-icon" id="btn-zoom-reset" title="重置缩放">100%</button>
+      <button class="btn btn-icon" id="btn-zoom-in" title="放大">＋</button>
+    </div>
+  </header>
+
+  <!-- ── 主体 ──────────────────────────────────────────── -->
+  <main class="main">
+    <div class="preview-scroll" id="preview-scroll">
+      <div class="zoom-canvas" id="zoom-canvas">
+        <div class="article-wrapper" id="preview-content"></div>
+      </div>
+    </div>
+
+    <!-- 小红书长图面板 -->
+    <aside class="side-panel" id="panel-xhs" hidden>
+      <div class="panel-head">
+        <span>📱 小红书长图导出</span>
+        <button class="panel-close" data-close="panel-xhs">✕</button>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>导出模式</span>
+          <select id="xhs-mode">
+            <option value="classic">保留主题样式（classic）</option>
+            <option value="adaptive">手机自适应大字（adaptive）</option>
+          </select>
+        </label>
+        <label class="field" id="xhs-font-row" hidden>
+          <span>正文字号 <em id="xhs-font-val">36</em> px</span>
+          <input type="range" id="xhs-font" min="20" max="60" step="1" value="36">
+        </label>
+        <p class="hint">输出尺寸 1080 × 1440（3:4）自动分片，2× 高清渲染。首次生成需要几秒。</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-xhs-generate">📸 生成预览</button>
+          <button class="btn" id="btn-xhs-export-all" disabled>💾 一键导出全部</button>
+        </div>
+        <div class="xhs-output" id="xhs-output"><p class="hint">还没有生成图片。</p></div>
+      </div>
+    </aside>
+
+    <!-- AI 文案面板 -->
+    <aside class="side-panel" id="panel-ai" hidden>
+      <div class="panel-head">
+        <span>🤖 AI 文案</span>
+        <button class="panel-close" data-close="panel-ai">✕</button>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>平台</span>
+          <select id="ai-platform">
+            <option value="xiaohongshu">小红书笔记</option>
+            <option value="twitter">Twitter / X 串推</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>指令（可编辑 prompt）</span>
+          <textarea id="ai-instruction" rows="7" spellcheck="false"></textarea>
+        </label>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-ai-generate">✨ AI 生成</button>
+          <button class="btn" id="btn-ai-local">⚡ 本地提取（离线）</button>
+        </div>
+        <div id="ai-status" class="hint"></div>
+        <div id="ai-result" hidden>
+          <label class="field">
+            <span>标题</span>
+            <input type="text" id="ai-title">
+          </label>
+          <label class="field" id="ai-body-row">
+            <span>正文</span>
+            <textarea id="ai-body" rows="8"></textarea>
+          </label>
+          <label class="field">
+            <span>标签（逗号分隔）</span>
+            <input type="text" id="ai-tags">
+          </label>
+          <div id="ai-tweets" class="tweets"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-ai-copy">📋 复制文案</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- LLM 配置面板 -->
+    <aside class="side-panel" id="panel-llm" hidden>
+      <div class="panel-head">
+        <span>⚙️ LLM 配置</span>
+        <button class="panel-close" data-close="panel-llm">✕</button>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>配置</span>
+          <div class="inline">
+            <select id="llm-profile"></select>
+            <button class="btn btn-icon" id="llm-new" title="新建配置">＋</button>
+            <button class="btn btn-icon" id="llm-del" title="删除当前配置">🗑</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>名称</span>
+          <input type="text" id="llm-name" placeholder="如：DeepSeek / 硅基流动">
+        </label>
+        <label class="field">
+          <span>接口地址（OpenAI 兼容）</span>
+          <input type="text" id="llm-baseurl" placeholder="https://api.deepseek.com/v1">
+        </label>
+        <label class="field">
+          <span>模型名</span>
+          <input type="text" id="llm-model" placeholder="deepseek-chat">
+        </label>
+        <label class="field">
+          <span>API Key <em id="llm-key-hint"></em></span>
+          <input type="password" id="llm-apikey" placeholder="留空表示不修改，安全存入系统钥匙串">
+        </label>
+        <div class="presets" id="llm-presets">
+          <button class="chip" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</button>
+          <button class="chip" data-base="https://api.siliconflow.cn/v1" data-model="Qwen/Qwen2.5-7B-Instruct">硅基流动</button>
+          <button class="chip" data-base="https://openrouter.ai/api/v1" data-model="deepseek/deepseek-chat">OpenRouter</button>
+          <button class="chip" data-base="https://api.groq.com/openai/v1" data-model="llama-3.3-70b-versatile">Groq</button>
+          <button class="chip" data-base="http://localhost:11434/v1" data-model="qwen2.5">本地 Ollama</button>
+          <button class="chip" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">OpenAI</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="llm-save">保存</button>
+          <button class="btn" id="llm-test">测试连接</button>
+        </div>
+        <div id="llm-status" class="hint"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script nonce="__NONCE__" src="__PANEL_JS_URI__"></script>
+</body>
+</html>

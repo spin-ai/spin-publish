@@ -1,0 +1,167 @@
+{
+  "name": "md2any",
+  "displayName": "md2any — 一键发微信/知乎/小红书/Twitter",
+  "description": "写完一篇 Markdown，一键复制到微信公众号 / 知乎 / 小红书，导出小红书长图，AI 生成平台文案与 Twitter 串推。支持 LaTeX 公式、14 套主题、实时预览。",
+  "version": "1.0.0",
+  "publisher": "spin",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#2d7a3e",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters"
+  ],
+  "keywords": [
+    "markdown",
+    "wechat",
+    "微信公众号",
+    "小红书",
+    "xiaohongshu",
+    "知乎",
+    "zhihu",
+    "twitter",
+    "X",
+    "一键发布",
+    "publish",
+    "LLM",
+    "文案生成",
+    "KaTeX",
+    "preview"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCommand:md2any.preview",
+    "onCommand:md2any.exportHtml"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "md2any.preview",
+        "title": "打开预览 / 发布面板",
+        "category": "md2any",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "md2any.exportHtml",
+        "title": "导出 HTML 文件",
+        "category": "md2any",
+        "icon": "$(export)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "md2any.preview",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "md2any.preview",
+          "when": "resourceLangId == markdown",
+          "group": "1_modification"
+        },
+        {
+          "command": "md2any.exportHtml",
+          "when": "resourceLangId == markdown",
+          "group": "1_modification"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "md2any.preview",
+          "when": "resourceExtname == .md",
+          "group": "1_modification"
+        },
+        {
+          "command": "md2any.exportHtml",
+          "when": "resourceExtname == .md",
+          "group": "1_modification"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "md2any.preview",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w",
+        "when": "resourceLangId == markdown"
+      }
+    ],
+    "configuration": {
+      "title": "md2any",
+      "properties": {
+        "md2any.theme": {
+          "type": "string",
+          "default": "claude",
+          "description": "默认主题 id（微信经典 wechat / claude / macOS / dark / zhihu / monochrome / spring / academic / xhs / notion / claude-pro / medium / ryf / clean-blue）。"
+        },
+        "md2any.outputPath": {
+          "type": "string",
+          "default": "",
+          "description": "导出 HTML 的目录（相对于工作区根目录）。留空则导出到 md 文件同目录。"
+        },
+        "md2any.template": {
+          "type": "string",
+          "default": "wechat",
+          "description": "复制到微信使用的 HTML 模板名（对应扩展 templates/ 下同名 .html）。"
+        },
+        "md2any.llm.baseUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com/v1",
+          "description": "AI 文案生成用的 LLM 接口地址（OpenAI 兼容 /chat/completions）。可填 DeepSeek、硅基流动、OpenRouter、本地 Ollama 等。"
+        },
+        "md2any.llm.model": {
+          "type": "string",
+          "default": "deepseek-chat",
+          "description": "AI 文案生成用的模型名，如 deepseek-chat、gpt-4o-mini、Qwen/Qwen2.5-7B-Instruct 等。"
+        },
+        "md2any.llm.sendFullText": {
+          "type": "boolean",
+          "default": true,
+          "description": "生成 AI 文案时，是否把 Markdown 正文一起发给模型（关闭则只发标题与摘要，更省 token）。"
+        },
+        "md2any.xhs.exportMode": {
+          "type": "string",
+          "enum": [
+            "classic",
+            "adaptive"
+          ],
+          "default": "classic",
+          "description": "小红书长图导出模式。classic：保留当前主题样式；adaptive：使用适合 3:4 手机图片阅读的大字体排版。"
+        },
+        "md2any.xhs.adaptiveUseTheme": {
+          "type": "boolean",
+          "default": true,
+          "description": "手机自适应截图是否跟随预览器主题色。开启则自动使用当前主题的强调色，关闭则固定小红书红 #ff2442。"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.9.0",
+    "html2canvas": "^1.4.1",
+    "juice": "^9.1.0",
+    "katex": "^0.16.0",
+    "marked": "^11.1.1",
+    "mathjax-full": "^3.2.1"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.9.2"
+  },
+  "scripts": {
+    "test": "node test/render.test.js && node test/host.test.js",
+    "package": "vsce package",
+    "install-ext": "vsce package && code --install-extension md2any-1.0.0.vsix"
+  }
+}

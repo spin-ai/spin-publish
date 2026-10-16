@@ -1,0 +1,50 @@
+# ── 版本控制 / 编辑器 ──────────────────────────────────────────────
+.git/
+.gitignore
+.github/
+.vscode/
+.DS_Store
+
+# ── 开发 / 临时文件 ────────────────────────────────────────────────
+test/
+test.md
+*_xhs/
+*.vsix
+package-lock.json
+
+# ── 开发专用 node_modules（vsce 已排除 devDependencies，这里再兜底）──
+node_modules/@vscode/
+node_modules/@azure/
+node_modules/@typespec/
+node_modules/@secretlint/
+node_modules/azure-devops-node-api/
+node_modules/.package-lock.json
+node_modules/.cache/
+
+# ── mathjax-full：只需 js/ ─────────────────────────────────────────
+node_modules/mathjax-full/es5/
+node_modules/mathjax-full/ts/
+node_modules/mathjax-full/components/
+node_modules/speech-rule-engine/
+
+# ── highlight.js：只需 CommonJS + 两个主题 ─────────────────────────
+node_modules/highlight.js/es/
+node_modules/highlight.js/scss/
+node_modules/highlight.js/styles/*.css
+!node_modules/highlight.js/styles/github.css
+!node_modules/highlight.js/styles/github.min.css
+
+# ── katex：只需 dist/ ──────────────────────────────────────────────
+node_modules/katex/src/
+node_modules/katex/dist/katex.mjs
+node_modules/katex/dist/contrib/
+node_modules/katex/dist/katex.min.js
+
+# ── html2canvas：只需 min 版 ───────────────────────────────────────
+node_modules/html2canvas/dist/lib/
+node_modules/html2canvas/dist/types/
+node_modules/html2canvas/dist/html2canvas.js
+node_modules/html2canvas/dist/html2canvas.esm.js
+
+# ── sourcemap ──────────────────────────────────────────────────────
+**/*.map
