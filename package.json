@@ -2,7 +2,7 @@
   "name": "smart-publisher",
   "displayName": "smart-publisher — 一键发微信/知乎/小红书/Twitter",
   "description": "写完一篇 Markdown，一键复制到微信公众号 / 知乎 / 小红书，导出小红书长图，AI 生成平台文案与 Twitter 串推。支持 LaTeX 公式、14 套主题、实时预览。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "spin",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -167,6 +167,7 @@
     "test:bundle": "npm run build && node test/render.test.js && SP_EXT_ENTRY=./dist/extension.js node test/host.test.js",
     "test:package": "node scripts/verify-package.js",
     "package": "vsce package --allow-missing-repository",
-    "install-ext": "npm run package -- --out smart-publisher-1.0.0.vsix && code --install-extension smart-publisher-1.0.0.vsix"
+    "install-ext": "node scripts/install.js",
+    "icon": "node scripts/make-icon.js"
   }
 }

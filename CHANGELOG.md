@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- 更换扩展图标：翡翠→深青渐变圆角方块 + 白色纸飞机（替换上游的深色 Md 图标），和原项目区分开
+- 新增 `npm run icon`：纯 Node 光栅化生成 `media/icon.png` / `icon.svg`，无第三方依赖、可复现
+- 新增 `npm run install-ext`：自动定位 `code` CLI，打包并安装到本机 VS Code
+
 ## 1.0.0
 
 项目名 `smart-publisher`（上游原始项目为 `markdown2anything`）。
