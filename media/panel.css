@@ -23,6 +23,12 @@ body { display: flex; flex-direction: column; }
 }
 .tb-row { display: flex; align-items: center; gap: 6px; min-height: 20px; }
 .tb-title-row { padding-bottom: 4px; }
+.brand {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: block;
+}
 .tb-actions { flex-wrap: wrap; }
 .doc-title {
   font-size: 12px; font-weight: 600; opacity: .85;

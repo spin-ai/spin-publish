@@ -34,10 +34,10 @@ const llm = require('./lib/llm');
 const { extractCopy } = require('./lib/extract');
 
 const VIEW_TYPE = 'smart-publisher.preview';
-const STATE_THEME = 'm2a.theme';
-const STATE_PROFILES = 'm2a.llm.profiles';
-const STATE_ACTIVE_PROFILE = 'm2a.llm.activeProfile';
-const SECRET_PREFIX = 'm2a.llm.apiKey.';
+const STATE_THEME = 'sp.theme';
+const STATE_PROFILES = 'sp.llm.profiles';
+const STATE_ACTIVE_PROFILE = 'sp.llm.activeProfile';
+const SECRET_PREFIX = 'sp.llm.apiKey.';
 
 /** mdPath -> { panel, disposables, renderTimer } */
 const panels = new Map();
@@ -161,13 +161,18 @@ function openPreview(uri) {
 function createPanel(mdPath) {
   const panel = vscode.window.createWebviewPanel(
     VIEW_TYPE,
-    `M2A · ${path.basename(mdPath)}`,
+    `smart-publisher · ${path.basename(mdPath)}`,
     { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
     {
       enableScripts: true,
       retainContextWhenHidden: true,
       localResourceRoots: [extContext.extensionUri],
     },
+  );
+
+  // 面板标签页图标（之前是 VS Code 默认图标）
+  panel.iconPath = vscode.Uri.file(
+    path.join(extContext.extensionUri.fsPath, 'media', 'icon.png'),
   );
 
   const entry = { panel, disposables: [], renderTimer: null };
@@ -211,7 +216,7 @@ function renderPanel(mdPath) {
     const theme = getTheme(getThemeId());
     const raw = getMarkdownText(mdPath);
     const wordCount = raw.replace(/\s+/g, '').length;
-    entry.panel.title = `M2A · ${path.basename(mdPath)}`;
+    entry.panel.title = `smart-publisher · ${path.basename(mdPath)}`;
     entry.panel.webview.postMessage({
       type: 'render',
       bodyHtml,
@@ -247,6 +252,7 @@ function getWebviewHtml(webview) {
   const html2canvas = uri(path.join('node_modules', 'html2canvas', 'dist', 'html2canvas.min.js'));
   const panelCss = uri(path.join('media', 'panel.css'));
   const panelJs = uri(path.join('media', 'panel.js'));
+  const iconUri = uri(path.join('media', 'icon.svg'));
 
   let version = '';
   try { version = require('./package.json').version; } catch (_) {}
@@ -260,6 +266,7 @@ function getWebviewHtml(webview) {
     .split('__HTML2CANVAS_URI__').join(html2canvas)
     .split('__PANEL_CSS_URI__').join(panelCss)
     .split('__PANEL_JS_URI__').join(panelJs)
+    .split('__ICON_URI__').join(iconUri)
     .split('__VERSION__').join(version);
   return html;
 }

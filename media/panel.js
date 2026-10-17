@@ -31,7 +31,7 @@
   function applyTheme(theme) {
     currentTheme = theme;
     const accent = themeAccent(theme);
-    document.documentElement.style.setProperty('--m2a-accent', accent);
+    document.documentElement.style.setProperty('--sp-accent', accent);
     let styleEl = document.getElementById('theme-style');
     if (!styleEl) {
       styleEl = document.createElement('style');

@@ -14,7 +14,7 @@ const ROOT = process.env.SP_EXT_ROOT
   : path.join(__dirname, '..');
 
 // ── 测试用 Markdown ──
-const mdPath = path.join(os.tmpdir(), 'm2a-host-test.md');
+const mdPath = path.join(os.tmpdir(), 'sp-host-test.md');
 fs.writeFileSync(mdPath, '---\ntitle: FM 标题\n---\n\n# 标题\n\n公式 $E=mc^2$\n\n$$\nL = -\\frac{1}{N}\\sum y_i\n$$\n\n```js\nconst a = 1;\n```\n', 'utf8');
 
 // ── mock vscode ──
@@ -103,12 +103,13 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
 
   vscode.commands._cmds['smart-publisher.preview']({ fsPath: mdPath });
   assert.ok(messageHandler, 'webview 消息处理器未注册');
-  for (const ph of ['__NONCE__', '__CSP_SOURCE__', '__KATEX_URI__', '__HTML2CANVAS_URI__', '__PANEL_JS_URI__']) {
+  for (const ph of ['__NONCE__', '__CSP_SOURCE__', '__KATEX_URI__', '__HTML2CANVAS_URI__', '__PANEL_JS_URI__', '__ICON_URI__']) {
     assert.ok(!panelHtml.includes(ph), `占位符 ${ph} 未替换`);
   }
   // 运行时静态资源必须真实存在（验证 .vscodeignore 没有误删）
   for (const rel of [
     'media/panel.html', 'media/panel.css', 'media/panel.js',
+    'media/icon.png', 'media/icon.svg',
     'templates/wechat.html',
     'node_modules/katex/dist/katex.min.css',
     'node_modules/katex/dist/katex.js',
@@ -144,7 +145,7 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
   console.log('✓ 本地文案提取');
 
   await messageHandler({ type: 'llmSaveConfig', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat', apiKey: 'sk-test' }); await wait();
-  const keyName = [...secrets.keys()].find((k) => k.startsWith('m2a.llm.apiKey.'));
+  const keyName = [...secrets.keys()].find((k) => k.startsWith('sp.llm.apiKey.'));
   assert.strictEqual(secrets.get(keyName), 'sk-test', 'API Key 未存入 SecretStorage');
   console.log('✓ LLM 配置保存（Key → SecretStorage）');
 
