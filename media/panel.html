@@ -19,6 +19,62 @@
   <script nonce="__NONCE__" src="__HTML2CANVAS_URI__"></script>
 </head>
 <body>
+  <!-- ── 图标 sprite（线性 / currentColor，跟随 VS Code 主题）────────── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2"/>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    </symbol>
+    <symbol id="i-file-code" viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <polyline points="10 13 8 15 10 17"/>
+      <polyline points="14 13 16 15 14 17"/>
+    </symbol>
+    <symbol id="i-image" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24">
+      <path d="M12 3l1.9 5.8L20 10.7l-6.1 1.9L12 18.4l-1.9-5.8L4 10.7l6.1-1.9z"/>
+      <path d="M19 14.5v4M17 16.5h4M5 16v3M3.5 17.5h3"/>
+    </symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+  </svg>
+
   <!-- ── 工具栏 ─────────────────────────────────────────── -->
   <header class="toolbar">
     <div class="tb-row tb-title-row">
@@ -29,18 +85,32 @@
       <span class="ver">v__VERSION__</span>
     </div>
     <div class="tb-row tb-actions">
-      <button class="btn btn-primary" id="btn-copy-wechat" title="复制带内联样式的富文本，粘贴到公众号编辑器">📋 复制微信</button>
-      <button class="btn" id="btn-copy-zhihu" title="复制为知乎友好的富文本（公式用知乎图床）">📋 复制知乎</button>
-      <button class="btn" id="btn-copy-xhs" title="复制为小红书长文编辑器友好的富文本">📋 复制小红书</button>
-      <button class="btn" id="btn-export-html" title="导出为独立 HTML 文件">💾 导出 HTML</button>
-      <button class="btn" id="btn-xhs" title="导出小红书 1080×1440 长图">📱 长图导出</button>
-      <button class="btn" id="btn-ai" title="用 LLM 生成小红书 / Twitter 文案">🤖 AI 文案</button>
-      <button class="btn" id="btn-llm" title="配置 LLM 接口">⚙️ LLM</button>
+      <button class="btn btn-primary" id="btn-copy-wechat" title="复制带内联样式的富文本，粘贴到公众号编辑器">
+        <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span class="btn-label">复制微信</span>
+      </button>
+      <button class="btn" id="btn-copy-zhihu" title="复制为知乎友好的富文本（公式用知乎图床）">
+        <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span class="btn-label">复制知乎</span>
+      </button>
+      <button class="btn" id="btn-copy-xhs" title="复制为小红书长文编辑器友好的富文本">
+        <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span class="btn-label">复制小红书</span>
+      </button>
+      <button class="btn" id="btn-export-html" title="导出为独立 HTML 文件">
+        <svg class="icon" aria-hidden="true"><use href="#i-file-code"/></svg><span class="btn-label">导出 HTML</span>
+      </button>
+      <button class="btn" id="btn-xhs" title="导出小红书 1080×1440 长图">
+        <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><span class="btn-label">长图导出</span>
+      </button>
+      <button class="btn" id="btn-ai" title="用 LLM 生成小红书 / Twitter 文案">
+        <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 文案</span>
+      </button>
+      <button class="btn" id="btn-llm" title="配置 LLM 接口">
+        <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span class="btn-label">LLM</span>
+      </button>
       <span class="spacer"></span>
       <select id="theme-select" title="切换主题"></select>
-      <button class="btn btn-icon" id="btn-zoom-out" title="缩小">−</button>
+      <button class="btn btn-icon" id="btn-zoom-out" title="缩小" aria-label="缩小"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
       <button class="btn btn-icon" id="btn-zoom-reset" title="重置缩放">100%</button>
-      <button class="btn btn-icon" id="btn-zoom-in" title="放大">＋</button>
+      <button class="btn btn-icon" id="btn-zoom-in" title="放大" aria-label="放大"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
     </div>
   </header>
 
@@ -55,8 +125,8 @@
     <!-- 小红书长图面板 -->
     <aside class="side-panel" id="panel-xhs" hidden>
       <div class="panel-head">
-        <span>📱 小红书长图导出</span>
-        <button class="panel-close" data-close="panel-xhs">✕</button>
+        <span><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>小红书长图导出</span>
+        <button class="panel-close" data-close="panel-xhs" title="关闭" aria-label="关闭"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
       <div class="panel-body">
         <label class="field">
@@ -72,8 +142,12 @@
         </label>
         <p class="hint">输出尺寸 1080 × 1440（3:4）自动分片，2× 高清渲染。首次生成需要几秒。</p>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btn-xhs-generate">📸 生成预览</button>
-          <button class="btn" id="btn-xhs-export-all" disabled>💾 一键导出全部</button>
+          <button class="btn btn-primary" id="btn-xhs-generate">
+            <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg><span class="btn-label">生成预览</span>
+          </button>
+          <button class="btn" id="btn-xhs-export-all" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span class="btn-label">一键导出全部</span>
+          </button>
         </div>
         <div class="xhs-output" id="xhs-output"><p class="hint">还没有生成图片。</p></div>
       </div>
@@ -82,8 +156,8 @@
     <!-- AI 文案面板 -->
     <aside class="side-panel" id="panel-ai" hidden>
       <div class="panel-head">
-        <span>🤖 AI 文案</span>
-        <button class="panel-close" data-close="panel-ai">✕</button>
+        <span><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>AI 文案</span>
+        <button class="panel-close" data-close="panel-ai" title="关闭" aria-label="关闭"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
       <div class="panel-body">
         <label class="field">
@@ -98,8 +172,12 @@
           <textarea id="ai-instruction" rows="7" spellcheck="false"></textarea>
         </label>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btn-ai-generate">✨ AI 生成</button>
-          <button class="btn" id="btn-ai-local">⚡ 本地提取（离线）</button>
+          <button class="btn btn-primary" id="btn-ai-generate">
+            <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 生成</span>
+          </button>
+          <button class="btn" id="btn-ai-local">
+            <svg class="icon" aria-hidden="true"><use href="#i-zap"/></svg><span class="btn-label">本地提取（离线）</span>
+          </button>
         </div>
         <div id="ai-status" class="hint"></div>
         <div id="ai-result" hidden>
@@ -117,7 +195,9 @@
           </label>
           <div id="ai-tweets" class="tweets"></div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="btn-ai-copy">📋 复制文案</button>
+            <button class="btn btn-primary" id="btn-ai-copy">
+              <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span class="btn-label">复制文案</span>
+            </button>
           </div>
         </div>
       </div>
@@ -126,16 +206,16 @@
     <!-- LLM 配置面板 -->
     <aside class="side-panel" id="panel-llm" hidden>
       <div class="panel-head">
-        <span>⚙️ LLM 配置</span>
-        <button class="panel-close" data-close="panel-llm">✕</button>
+        <span><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>LLM 配置</span>
+        <button class="panel-close" data-close="panel-llm" title="关闭" aria-label="关闭"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
       <div class="panel-body">
         <label class="field">
           <span>配置</span>
           <div class="inline">
             <select id="llm-profile"></select>
-            <button class="btn btn-icon" id="llm-new" title="新建配置">＋</button>
-            <button class="btn btn-icon" id="llm-del" title="删除当前配置">🗑</button>
+            <button class="btn btn-icon" id="llm-new" title="新建配置" aria-label="新建配置"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            <button class="btn btn-icon" id="llm-del" title="删除当前配置" aria-label="删除当前配置"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
           </div>
         </label>
         <label class="field">

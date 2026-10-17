@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- 工具栏 / 侧栏图标由 emoji 换成统一线性 SVG（`currentColor`，跟随 VS Code 主题色）
+- 图标用内联 sprite（`<symbol>` + `<use>`），不引入外部资源、不增加请求
+- 修复按钮忙碌态会覆盖图标的问题（只更新 `.btn-label`）
+
 ## 1.0.2
 
 - 面板标签页标题由 `M2A · xxx.md` 改为 `smart-publisher · xxx.md`

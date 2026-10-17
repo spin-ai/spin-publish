@@ -137,8 +137,15 @@
     const b = $(id);
     if (!b) return;
     b.disabled = busy;
-    if (label) b.dataset._label = b.textContent, b.textContent = label;
-    else if (b.dataset._label) b.textContent = b.dataset._label;
+    const lbl = b.querySelector('.btn-label');
+    if (!lbl) return;
+    if (label) {
+      if (!b.dataset._label) b.dataset._label = lbl.textContent;
+      lbl.textContent = label;
+    } else if (b.dataset._label) {
+      lbl.textContent = b.dataset._label;
+      delete b.dataset._label;
+    }
   }
 
   // ── 小红书长图 ────────────────────────────────────────

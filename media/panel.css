@@ -49,6 +49,9 @@ body { display: flex; flex-direction: column; }
   background: var(--vscode-button-secondaryBackground, #3a3d41);
   transition: background .12s, filter .12s;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .btn:hover { background: var(--vscode-button-secondaryHoverBackground, #45494e); }
 .btn-primary {
@@ -58,6 +61,21 @@ body { display: flex; flex-direction: column; }
 .btn-primary:hover { background: var(--vscode-button-hoverBackground, #0b8c59); }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn-icon { padding: 4px 9px; }
+
+/* 线性 SVG 图标：跟随按钮文字颜色（currentColor） */
+.icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.btn-icon .icon { width: 14px; height: 14px; }
+.btn-label { white-space: nowrap; }
 .btn-row { display: flex; gap: 6px; margin: 10px 0 0; flex-wrap: wrap; }
 
 select, input[type="text"], input[type="password"], textarea {
@@ -113,10 +131,13 @@ textarea { resize: vertical; width: 100%; }
   font-size: 13px; font-weight: 600;
   border-bottom: 1px solid var(--vscode-panel-border, #333);
 }
+.panel-head > span { display: inline-flex; align-items: center; gap: 7px; }
 .panel-close {
   background: transparent; border: none; color: inherit; cursor: pointer;
-  font-size: 13px; opacity: .7;
+  opacity: .7; display: inline-flex; align-items: center;
+  padding: 2px; border-radius: 4px;
 }
+.panel-close .icon { width: 14px; height: 14px; }
 .panel-close:hover { opacity: 1; }
 .panel-body { padding: 12px; overflow-y: auto; }
 
