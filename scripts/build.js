@@ -28,6 +28,8 @@ esbuild.build({
     // katex 需要运行时读取 dist CSS 与字体文件（require.resolve），必须保持 external
     'katex',
     'katex/*',
+    // highlight.js 的 JS 已内联，但这两个主题 CSS 需在运行时 require.resolve，保持 external
+    'highlight.js/styles/*',
   ],
   // mathjax 的 version.js 用 eval('__dirname') 去找 package.json，bundle 后会失效；
   // 定义 PACKAGE_VERSION 走它的官方旁路，即可安全内联 mathjax-full。
