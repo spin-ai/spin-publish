@@ -5,3 +5,14 @@ dist/
 .DS_Store
 *_xhs/
 test.md
+
+# 内置发布技能的 Python 运行时
+publishers/**/.venv/
+publishers/**/__pycache__/
+publishers/**/*.pyc
+publishers/**/output/
+publishers/**/.requirements.sha256
+
+# 去 AI 味生成的副本
+*-humanized.md
+*-humanized-selection.md

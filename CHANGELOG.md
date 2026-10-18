@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.1.0
+
+### 新功能
+
+- **去 AI 味**：内置检测器（词面规则 + 段落节奏 / 列表 / 加粗密度）给文章打分，面板展示命中项与改写建议；按报告生成可编辑 prompt，AI 改写后自动复检分数
+  - 支持**全文**与**当前选中片段**两种范围
+  - `应用到文档` 直接替换（可撤销），`另存副本` 保存为 `<name>-humanized.md`
+  - 检测器纯本地运行，不联网；检测逻辑由 `humanize-writing` 的 `detector.py` 移植为 `lib/humanize.js`
+- **选区 AI 改写**：选中文字后右键 `AI 改写选中文字`（`Cmd/Ctrl+Alt+R`）
+  - 预设：去 AI 味 / 润色 / 精简 / 扩写 / 更口语 / 更正式 / 修正语法与错别字 / 翻译成英文 / 自定义指令
+  - 结果先打开 **diff**（原文 ↔ 改写后），确认后替换选区，也可只复制
+- **内置知乎 / 今日头条自动发布**：原 `opencode-publisher` 技能并入 `publishers/`
+  - 命令：`发布到知乎` / `发布到今日头条` / `扫码登录` / `检查登录状态`
+  - 默认填充草稿并停在发布前；`直接发布` 需二次确认
+  - 登录态默认 `~/.smart-publisher/<platform>/`，兼容旧的 `~/.opencode-publisher`
+  - 新增配置：`publisher.pythonPath`、`publisher.dataDir`、`humanize.targetScore`
+
+### 其他
+
+- `.vscodeignore` 锚定开发目录，避免把内置发布技能的 `scripts/` 误排除；同时排除 `.venv`、`__pycache__`、技能测试
+- 新增 `test/humanize.test.js`（检测器 / 命令构造）与 `test/rewrite.test.js`（选区改写 / 去 AI 味 LLM 管线），宿主测试覆盖去 AI 味检测与应用
+- README 补充去 AI 味、选区改写、自动发布文档
+
 ## 1.0.4
 
 ### 新功能

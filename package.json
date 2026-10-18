@@ -1,8 +1,8 @@
 {
   "name": "smart-publisher",
   "displayName": "smart-publisher — 一键发微信/知乎/小红书/Twitter",
-  "description": "写完一篇 Markdown，一键复制到微信公众号 / 知乎 / 小红书，导出小红书长图，AI 生成平台文案与 Twitter 串推。支持 LaTeX 公式、14 套主题、实时预览。",
-  "version": "1.0.4",
+  "description": "写完一篇 Markdown，一键复制到微信公众号 / 知乎 / 小红书，导出小红书长图，AI 去 AI 味与选区改写，浏览器自动发布知乎 / 今日头条。支持 LaTeX 公式、14 套主题、实时预览。",
+  "version": "1.1.0",
   "publisher": "spin",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -32,13 +32,24 @@
     "LLM",
     "文案生成",
     "KaTeX",
-    "preview"
+    "preview",
+    "去AI味",
+    "humanize",
+    "知乎发布",
+    "头条发布",
+    "AI改写"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:markdown",
     "onCommand:smart-publisher.preview",
-    "onCommand:smart-publisher.exportHtml"
+    "onCommand:smart-publisher.exportHtml",
+    "onCommand:smart-publisher.humanize",
+    "onCommand:smart-publisher.aiRewriteSelection",
+    "onCommand:smart-publisher.publishZhihu",
+    "onCommand:smart-publisher.publishToutiao",
+    "onCommand:smart-publisher.publisherLogin",
+    "onCommand:smart-publisher.publisherStatus"
   ],
   "contributes": {
     "commands": [
@@ -53,12 +64,53 @@
         "title": "导出 HTML 文件",
         "category": "smart-publisher",
         "icon": "$(export)"
+      },
+      {
+        "command": "smart-publisher.humanize",
+        "title": "去 AI 味（检测 + 改写）",
+        "category": "smart-publisher",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "smart-publisher.aiRewriteSelection",
+        "title": "AI 改写选中文字",
+        "category": "smart-publisher",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "smart-publisher.publishZhihu",
+        "title": "发布到知乎（浏览器自动化）",
+        "category": "smart-publisher",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "smart-publisher.publishToutiao",
+        "title": "发布到今日头条（浏览器自动化）",
+        "category": "smart-publisher",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "smart-publisher.publisherLogin",
+        "title": "发布平台：扫码登录",
+        "category": "smart-publisher",
+        "icon": "$(account)"
+      },
+      {
+        "command": "smart-publisher.publisherStatus",
+        "title": "发布平台：检查登录状态",
+        "category": "smart-publisher",
+        "icon": "$(check)"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "smart-publisher.preview",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        },
+        {
+          "command": "smart-publisher.humanize",
           "when": "resourceLangId == markdown",
           "group": "navigation"
         }
@@ -70,9 +122,29 @@
           "group": "1_modification"
         },
         {
+          "command": "smart-publisher.humanize",
+          "when": "resourceLangId == markdown",
+          "group": "1_modification"
+        },
+        {
+          "command": "smart-publisher.aiRewriteSelection",
+          "when": "editorHasSelection",
+          "group": "1_modification"
+        },
+        {
           "command": "smart-publisher.exportHtml",
           "when": "resourceLangId == markdown",
           "group": "1_modification"
+        },
+        {
+          "command": "smart-publisher.publishZhihu",
+          "when": "resourceLangId == markdown",
+          "group": "9_publish"
+        },
+        {
+          "command": "smart-publisher.publishToutiao",
+          "when": "resourceLangId == markdown",
+          "group": "9_publish"
         }
       ],
       "explorer/context": [
@@ -80,6 +152,16 @@
           "command": "smart-publisher.preview",
           "when": "resourceExtname == .md",
           "group": "1_modification"
+        },
+        {
+          "command": "smart-publisher.publishZhihu",
+          "when": "resourceExtname == .md",
+          "group": "9_publish"
+        },
+        {
+          "command": "smart-publisher.publishToutiao",
+          "when": "resourceExtname == .md",
+          "group": "9_publish"
         },
         {
           "command": "smart-publisher.exportHtml",
@@ -94,6 +176,18 @@
         "key": "ctrl+shift+w",
         "mac": "cmd+shift+w",
         "when": "resourceLangId == markdown"
+      },
+      {
+        "command": "smart-publisher.humanize",
+        "key": "ctrl+alt+h",
+        "mac": "cmd+alt+h",
+        "when": "resourceLangId == markdown"
+      },
+      {
+        "command": "smart-publisher.aiRewriteSelection",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorHasSelection"
       }
     ],
     "configuration": {
@@ -142,6 +236,23 @@
           "type": "boolean",
           "default": true,
           "description": "手机自适应截图是否跟随预览器主题色。开启则自动使用当前主题的强调色，关闭则固定小红书红 #ff2442。"
+        },
+        "smart-publisher.humanize.targetScore": {
+          "type": "number",
+          "default": 25,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "去 AI 味的目标分数（0-100）。生成改写 prompt 时会要求模型把检测分数降到该值以下；25 以下通常算「自然」。"
+        },
+        "smart-publisher.publisher.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "自动发布用的 Python 解释器路径（需要 Python 3.9+）。留空则使用 python3（Windows 为 python）。"
+        },
+        "smart-publisher.publisher.dataDir": {
+          "type": "string",
+          "default": "",
+          "description": "知乎 / 今日头条登录态目录。留空则使用 ~/.smart-publisher（会兼容旧的 ~/.opencode-publisher 登录态）。"
         }
       }
     }
@@ -163,8 +274,8 @@
   "scripts": {
     "build": "node scripts/build.js",
     "vscode:prepublish": "npm run build",
-    "test": "node test/render.test.js && node test/host.test.js",
-    "test:bundle": "npm run build && node test/render.test.js && SP_EXT_ENTRY=./dist/extension.js node test/host.test.js",
+    "test": "node test/humanize.test.js && node test/rewrite.test.js && node test/render.test.js && node test/host.test.js",
+    "test:bundle": "npm run build && node test/humanize.test.js && node test/rewrite.test.js && node test/render.test.js && SP_EXT_ENTRY=./dist/extension.js node test/host.test.js",
     "test:package": "node scripts/verify-package.js",
     "package": "vsce package",
     "install-ext": "node scripts/install.js",

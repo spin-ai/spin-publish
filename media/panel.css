@@ -193,3 +193,71 @@ textarea { resize: vertical; width: 100%; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { border-color: #b42318; }
+
+/* ── 去 AI 味面板 ─────────────────────────────────────── */
+.scope-row {
+  display: flex; align-items: center; gap: 16px;
+  margin: 0 0 4px;
+  font-size: 12.5px;
+}
+.scope-row .radio {
+  display: inline-flex; align-items: center; gap: 5px;
+  cursor: pointer;
+}
+.scope-row em { font-style: normal; opacity: .55; font-size: 11px; }
+.scope-row input[type="radio"] { margin: 0; }
+
+.report {
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border, #3a3a3a);
+  border-radius: 7px;
+  background: rgba(127, 127, 127, .06);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.report[hidden] { display: none; }
+.report .score-line {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.report .score-num { font-size: 22px; font-weight: 700; line-height: 1; }
+.report .score-sub { opacity: .65; font-size: 11.5px; }
+.report .score-good { color: #2ea043; }
+.report .score-warn { color: #d29922; }
+.report .score-bad { color: #f85149; }
+.report .score-unknown { opacity: .7; }
+.report .report-title {
+  margin: 10px 0 4px;
+  font-weight: 600;
+  font-size: 11.5px;
+  opacity: .8;
+}
+.report .report-title:first-child { margin-top: 0; }
+.report ul { margin: 0; padding-left: 17px; }
+.report li { margin: 2px 0; }
+.report .cat-item { display: flex; gap: 6px; align-items: baseline; }
+.report .cat-item .count { opacity: .6; font-size: 11px; }
+.report .sev {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: .9;
+}
+.report .sev-high { color: #f85149; }
+.report .sev-medium { color: #d29922; }
+.report .sev-low { color: var(--vscode-descriptionForeground, #8b949e); }
+.report .penalty { color: #d29922; }
+.report .suggestion-src { opacity: .7; }
+.report .after-box {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--vscode-panel-border, #444);
+}
+.report .after-box .score-num { font-size: 18px; }
+.report .grade-good { color: #2ea043; }
+.report .grade-warn { color: #d29922; }
+.report .grade-bad { color: #f85149; }

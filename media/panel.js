@@ -13,6 +13,14 @@
   let xhsSlices = [];
   let llmState = { profiles: [], activeId: '', hasKey: false };
   let aiData = null;
+  let humanizeState = {
+    scope: 'document',
+    report: null,
+    defaultInstruction: '',
+    instructionDirty: false,
+    selectionChars: 0,
+    hasResult: false,
+  };
 
   // ── 工具函数 ──────────────────────────────────────────
   let toastTimer = null;
@@ -86,14 +94,26 @@
   function togglePanel(id) {
     const el = $(id);
     const willShow = el.hidden;
-    ['panel-xhs', 'panel-ai', 'panel-llm', 'panel-ppt'].forEach((p) => { $(p).hidden = true; });
+    ['panel-xhs', 'panel-ai', 'panel-llm', 'panel-ppt', 'panel-humanize'].forEach((p) => { $(p).hidden = true; });
     el.hidden = !willShow;
     if (id === 'panel-ai' && willShow) requestInstruction();
     if (id === 'panel-llm' && willShow) vscode.postMessage({ type: 'llmGetConfig' });
     if (id === 'panel-ppt' && willShow) requestPptInstruction();
+    if (id === 'panel-humanize' && willShow) requestHumanizeDetect();
+  }
+  function openPanelByName(name) {
+    const id = name === 'humanize' ? 'panel-humanize' : name;
+    if (!id || !$(id)) return;
+    ['panel-xhs', 'panel-ai', 'panel-llm', 'panel-ppt', 'panel-humanize'].forEach((p) => { $(p).hidden = true; });
+    $(id).hidden = false;
+    if (id === 'panel-ai') requestInstruction();
+    if (id === 'panel-llm') vscode.postMessage({ type: 'llmGetConfig' });
+    if (id === 'panel-ppt') requestPptInstruction();
+    if (id === 'panel-humanize') requestHumanizeDetect();
   }
   $('btn-xhs').addEventListener('click', () => togglePanel('panel-xhs'));
   $('btn-ppt').addEventListener('click', () => togglePanel('panel-ppt'));
+  $('btn-humanize').addEventListener('click', () => togglePanel('panel-humanize'));
   $('btn-ai').addEventListener('click', () => togglePanel('panel-ai'));
   $('btn-llm').addEventListener('click', () => togglePanel('panel-llm'));
   document.querySelectorAll('.panel-close').forEach((b) => {
@@ -406,6 +426,130 @@
       : '✅ 本地提取完成（未调用模型），可继续编辑后复制';
   }
 
+  // ── 去 AI 味 ──────────────────────────────────────────
+  function humanizeScope() {
+    const checked = document.querySelector('input[name="humanize-scope"]:checked');
+    return checked ? checked.value : 'document';
+  }
+
+  function requestHumanizeDetect() {
+    $('humanize-status').textContent = '⏳ 正在检测…';
+    setBusy('btn-humanize-detect', true, '检测中…');
+    vscode.postMessage({ type: 'humanizeDetect', scope: humanizeScope() });
+  }
+
+  document.querySelectorAll('input[name="humanize-scope"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      humanizeState.hasResult = false;
+      $('humanize-result-wrap').hidden = true;
+      $('humanize-result').value = '';
+      requestHumanizeDetect();
+    });
+  });
+  $('btn-humanize-detect').addEventListener('click', requestHumanizeDetect);
+  $('btn-humanize-generate').addEventListener('click', () => {
+    $('humanize-status').textContent = '⏳ 正在调用 LLM 改写…';
+    $('humanize-result-wrap').hidden = true;
+    $('humanize-result').value = '';
+    humanizeState.hasResult = false;
+    setBusy('btn-humanize-generate', true, '改写中…');
+    vscode.postMessage({
+      type: 'humanizeGenerate',
+      scope: humanizeScope(),
+      instruction: $('humanize-instruction').value,
+    });
+  });
+  $('humanize-instruction').addEventListener('input', () => {
+    humanizeState.instructionDirty = true;
+  });
+  $('btn-humanize-reset-prompt').addEventListener('click', () => {
+    humanizeState.instructionDirty = false;
+    if (humanizeState.defaultInstruction) {
+      $('humanize-instruction').value = humanizeState.defaultInstruction;
+    } else {
+      vscode.postMessage({ type: 'humanizeGetInstruction', report: humanizeState.report });
+    }
+  });
+  $('btn-humanize-apply').addEventListener('click', () => {
+    const result = $('humanize-result').value.trim();
+    if (!result) { toast('改写结果为空', 'error'); return; }
+    $('humanize-status').textContent = '⏳ 正在应用修改…';
+    setBusy('btn-humanize-apply', true, '应用中…');
+    vscode.postMessage({ type: 'humanizeApply', scope: humanizeScope(), result });
+  });
+  $('btn-humanize-save').addEventListener('click', () => {
+    const result = $('humanize-result').value.trim();
+    if (!result) { toast('改写结果为空', 'error'); return; }
+    $('humanize-status').textContent = '⏳ 正在保存…';
+    vscode.postMessage({ type: 'humanizeSave', scope: humanizeScope(), result });
+  });
+
+  function humanizeScoreClass(score) {
+    if (score < 25) return 'score-good';
+    if (score < 50) return 'score-warn';
+    return 'score-bad';
+  }
+
+  function humanizeSeverityWeight(sev) {
+    return sev === 'high' ? 3 : sev === 'medium' ? 2 : 1;
+  }
+
+  function renderHumanizeReport(report) {
+    if (!report) {
+      $('humanize-report').innerHTML = '<p class="hint">还没有检测结果。</p>';
+      return;
+    }
+    humanizeState.report = report;
+    const scoreClass = humanizeScoreClass(report.score);
+    const cats = Object.entries(report.by_category || {}).sort((a, b) => {
+      const d = humanizeSeverityWeight(b[1].severity) - humanizeSeverityWeight(a[1].severity);
+      return d !== 0 ? d : b[1].count - a[1].count;
+    });
+    const categoryHtml = cats.length
+      ? cats.map(([name, entry]) => (
+          `<li class="cat-item"><span>${escapeHtml(name)}</span>` +
+          `<span class="count">${entry.count} 处</span>` +
+          `<span class="sev sev-${escapeHtml(entry.severity)}">${escapeHtml(entry.severity)}</span></li>`
+        )).join('')
+      : '<li>没有命中词面特征。</li>';
+
+    const structure = report.structure || {};
+    const cv = structure.paragraph_cv;
+    const structureLines = [
+      `段落长度变异系数：${cv === null || cv === undefined ? '样本不足' : cv}` + (cv !== null && cv !== undefined && cv < 0.25 ? '（过于均匀）' : ''),
+      `列表行占比：${Math.round((structure.bullet_ratio || 0) * 100)}%` + ((structure.bullet_ratio || 0) > 0.4 ? '（过高）' : ''),
+      `加粗：${structure.bold_count || 0} 处`,
+    ];
+    const penalties = (report.structure_penalties || []).map((p) => `<li class="penalty">⚠ ${escapeHtml(p)}</li>`).join('');
+    const suggestions = (report.top_suggestions || []).slice(0, 6).map((hit) => (
+      `<li><span class="suggestion-src">第 ${hit.line} 行 “${escapeHtml(hit.excerpt)}”</span> → ${escapeHtml(hit.suggestion)}</li>`
+    )).join('');
+
+    $('humanize-report').innerHTML =
+      `<div class="score-line"><span class="score-num ${scoreClass}">${report.score}</span>` +
+      `<span class="score-sub">/ 100 · ${escapeHtml(report.grade || '')}</span></div>` +
+      `<div class="score-sub">正文 ${report.char_count} 字 · 命中 ${report.total_hits} 处 · 加权密度 ${report.density_per_1000}/千字</div>` +
+      `<div class="report-title">词面命中</div><ul>${categoryHtml}</ul>` +
+      `<div class="report-title">结构指标</div><ul>${structureLines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}${penalties}</ul>` +
+      (suggestions ? `<div class="report-title">优先改写建议</div><ul>${suggestions}</ul>` : '');
+  }
+
+  function appendHumanizeAfter(before, after) {
+    if (!after) return;
+    const box = document.createElement('div');
+    box.className = 'after-box';
+    const scoreClass = humanizeScoreClass(after.score);
+    const delta = before ? (before.score - after.score) : 0;
+    box.innerHTML =
+      `<div class="score-line"><span class="score-num ${scoreClass}">${after.score}</span>` +
+      `<span class="score-sub">/ 100 · 改写后 · ${escapeHtml(after.grade || '')}</span></div>` +
+      `<div class="score-sub">命中 ${after.total_hits} 处` + (before ? ` · 分数 ${before.score} → ${after.score}（${delta >= 0 ? '↓' : '↑'} ${Math.abs(delta)}）` : '') + '</div>' +
+      ((after.structure_penalties || []).length
+        ? `<ul>${after.structure_penalties.map((p) => `<li class="penalty">⚠ ${escapeHtml(p)}</li>`).join('')}</ul>`
+        : '');
+    $('humanize-report').appendChild(box);
+  }
+
   // ── PPT 导出（Slidev / Marp）───────────────────────────
   $('ppt-backend').addEventListener('change', requestPptInstruction);
 
@@ -561,6 +705,72 @@
         toast(`✅ 已导出 ${msg.count} 张到 ${msg.dir}`, 'success');
         break;
       }
+      case 'openPanel': {
+        openPanelByName(msg.panel);
+        break;
+      }
+      case 'humanizeReport': {
+        setBusy('btn-humanize-detect', false);
+        setBusy('btn-humanize-generate', false);
+        humanizeState.defaultInstruction = msg.defaultInstruction || humanizeState.defaultInstruction;
+        if (!humanizeState.instructionDirty || !$('humanize-instruction').value) {
+          $('humanize-instruction').value = humanizeState.defaultInstruction || '';
+        }
+        renderHumanizeReport(msg.report);
+        $('humanize-status').textContent = `✅ 检测完成：${msg.report.score}/100（${msg.report.grade}）`;
+        break;
+      }
+      case 'humanizeGenerating': {
+        $('humanize-status').textContent = '⏳ 正在调用 LLM 改写…';
+        break;
+      }
+      case 'humanizeResult': {
+        setBusy('btn-humanize-generate', false);
+        humanizeState.hasResult = true;
+        $('humanize-result-wrap').hidden = false;
+        $('humanize-result').value = msg.markdown || '';
+        renderHumanizeReport(msg.before || humanizeState.report);
+        appendHumanizeAfter(msg.before, msg.after);
+        $('humanize-status').textContent = `✅ 改写完成：${msg.before.score} → ${msg.after.score}（${msg.after.grade}）。检查后可应用到文档。`;
+        break;
+      }
+      case 'humanizeError': {
+        setBusy('btn-humanize-detect', false);
+        setBusy('btn-humanize-generate', false);
+        setBusy('btn-humanize-apply', false);
+        $('humanize-status').textContent = '❌ ' + (msg.message || '操作失败');
+        toast(msg.message || '操作失败', 'error');
+        break;
+      }
+      case 'humanizeApplied': {
+        setBusy('btn-humanize-apply', false);
+        $('humanize-status').textContent = '✅ ' + (msg.message || '已应用修改');
+        humanizeState.hasResult = false;
+        toast('✅ ' + (msg.message || '已应用修改'));
+        break;
+      }
+      case 'humanizeSaved': {
+        $('humanize-status').textContent = '✅ 已保存副本：' + msg.path;
+        toast('✅ 已保存副本');
+        break;
+      }
+      case 'humanizeInstruction': {
+        if (!humanizeState.instructionDirty) {
+          humanizeState.defaultInstruction = msg.instruction || '';
+          $('humanize-instruction').value = humanizeState.defaultInstruction;
+        }
+        break;
+      }
+      case 'selectionChanged': {
+        humanizeState.selectionChars = msg.chars || 0;
+        $('humanize-sel-hint').textContent = `（已选中 ${humanizeState.selectionChars} 字）`;
+        break;
+      }
+      case 'selectionCleared': {
+        humanizeState.selectionChars = 0;
+        $('humanize-sel-hint').textContent = '（未选中）';
+        break;
+      }
       case 'copyInstruction': {
         $('ai-instruction').value = msg.instruction || '';
         break;
@@ -618,6 +828,7 @@
   });
 
   // ── 初始化 ────────────────────────────────────────────
+  $('humanize-sel-hint').textContent = '（未选中）';
   applyZoom();
   vscode.postMessage({ type: 'ready' });
 })();
