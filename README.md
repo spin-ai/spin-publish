@@ -1,5 +1,7 @@
 # smart-publisher (VS Code)
 
+[![CI](https://github.com/spin-ai/spin-publish/actions/workflows/ci.yml/badge.svg)](https://github.com/spin-ai/spin-publish/actions/workflows/ci.yml)
+
 > 扩展 ID：`spin.smart-publisher`　·　命令面板搜索 `smart-publisher`
 
 **写一次，发到所有平台。**
