@@ -74,6 +74,9 @@ console.log('✓ getXhsAdaptiveCss');
 
 assert.ok(llm.getDefaultInstruction('xiaohongshu').length > 50, '小红书默认 prompt 缺失');
 assert.ok(llm.getDefaultInstruction('twitter').length > 50, 'Twitter 默认 prompt 缺失');
+assert.ok(llm.getDefaultPptInstruction('slidev').includes('Slidev'), 'Slidev prompt 缺失');
+assert.ok(llm.getDefaultPptInstruction('marp').includes('Marp'), 'Marp prompt 缺失');
+assert.strictEqual(typeof llm.generatePptMarkdown, 'function', 'generatePptMarkdown 未导出');
 const local = extractCopy({ rawMarkdown: SAMPLE, platform: 'xiaohongshu' });
 assert.ok(local.title && local.tags.length, '本地文案提取失败');
 console.log('✓ llm 默认指令 + 本地文案提取');

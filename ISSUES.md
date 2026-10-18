@@ -26,7 +26,7 @@ labels: feature-plan, ci, complexity:medium
 ## #2 导出 PPT（Slidev / Marp）
 
 <!-- wade
-state: open
+state: closed
 labels: feature-plan, feature, complexity:complex
 -->
 

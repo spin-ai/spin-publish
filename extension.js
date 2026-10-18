@@ -419,6 +419,45 @@ async function handleMessage(mdPath, panel, msg) {
         break;
       }
 
+      // ── PPT 导出（Slidev / Marp）──
+      case 'getPptInstruction': {
+        panel.webview.postMessage({
+          type: 'pptInstruction',
+          backend: msg.backend,
+          instruction: llm.getDefaultPptInstruction(msg.backend),
+        });
+        break;
+      }
+
+      case 'generatePpt': {
+        const { rawMarkdown } = renderDoc(mdPath);
+        const backend = msg.backend === 'marp' ? 'marp' : 'slidev';
+        const config = await getActiveLlmConfig();
+        panel.webview.postMessage({ type: 'pptGenerating', backend });
+        try {
+          const markdown = await llm.generatePptMarkdown({
+            rawMarkdown,
+            backend,
+            instruction: msg.instruction,
+            config,
+          });
+          panel.webview.postMessage({ type: 'pptResult', backend, markdown });
+        } catch (err) {
+          panel.webview.postMessage({ type: 'pptError', backend, message: err.message });
+        }
+        break;
+      }
+
+      case 'savePpt': {
+        const backend = msg.backend === 'marp' ? 'marp' : 'slidev';
+        const { title } = renderDoc(mdPath);
+        const out = savePptFile(mdPath, backend, msg.markdown || '', title);
+        panel.webview.postMessage({ type: 'pptSaved', backend, path: out });
+        vscode.window.showInformationMessage(`✅ 已生成 ${path.basename(out)}`, '打开文件')
+          .then((a) => { if (a === '打开文件') vscode.env.openExternal(vscode.Uri.file(out)); });
+        break;
+      }
+
       // ── LLM 配置 ──
       case 'llmGetConfig': {
         sendLlmConfig(panel);
@@ -516,6 +555,34 @@ function exportHtmlFile(mdPath) {
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
   const out = path.join(outDir, `${base}.html`);
   fs.writeFileSync(out, html, 'utf8');
+  return out;
+}
+
+/** 去掉 LLM 可能附带的 front matter（仅当它看起来像 YAML 且较短） */
+function stripLeadingFrontMatter(md) {
+  const s = String(md || '').replace(/^\uFEFF/, '').trimStart();
+  const m = s.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  if (!m) return s.trim();
+  const block = m[1];
+  const looksLikeYaml = block.split('\n').length <= 30 && /^[A-Za-z_][\w-]*\s*:/m.test(block);
+  return looksLikeYaml ? s.slice(m[0].length).trim() : s.trim();
+}
+
+/**
+ * 保存 PPT Markdown，并按后端补上 front matter。
+ * Slidev → <base>-slides.md；Marp → <base>-marp.md
+ */
+function savePptFile(mdPath, backend, markdown, title) {
+  const body = stripLeadingFrontMatter(markdown);
+  const frontMatter = backend === 'marp'
+    ? '---\nmarp: true\ntheme: default\npaginate: true\nsize: 16:9\n---\n\n'
+    : `---\ntheme: default\ntitle: ${JSON.stringify(title || '')}\n---\n\n`;
+  const base = path.basename(mdPath, path.extname(mdPath));
+  const out = path.join(
+    path.dirname(mdPath),
+    backend === 'marp' ? `${base}-marp.md` : `${base}-slides.md`,
+  );
+  fs.writeFileSync(out, frontMatter + body + '\n', 'utf8');
   return out;
 }
 

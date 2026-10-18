@@ -86,12 +86,14 @@
   function togglePanel(id) {
     const el = $(id);
     const willShow = el.hidden;
-    ['panel-xhs', 'panel-ai', 'panel-llm'].forEach((p) => { $(p).hidden = true; });
+    ['panel-xhs', 'panel-ai', 'panel-llm', 'panel-ppt'].forEach((p) => { $(p).hidden = true; });
     el.hidden = !willShow;
     if (id === 'panel-ai' && willShow) requestInstruction();
     if (id === 'panel-llm' && willShow) vscode.postMessage({ type: 'llmGetConfig' });
+    if (id === 'panel-ppt' && willShow) requestPptInstruction();
   }
   $('btn-xhs').addEventListener('click', () => togglePanel('panel-xhs'));
+  $('btn-ppt').addEventListener('click', () => togglePanel('panel-ppt'));
   $('btn-ai').addEventListener('click', () => togglePanel('panel-ai'));
   $('btn-llm').addEventListener('click', () => togglePanel('panel-llm'));
   document.querySelectorAll('.panel-close').forEach((b) => {
@@ -404,6 +406,30 @@
       : '✅ 本地提取完成（未调用模型），可继续编辑后复制';
   }
 
+  // ── PPT 导出（Slidev / Marp）───────────────────────────
+  $('ppt-backend').addEventListener('change', requestPptInstruction);
+
+  function requestPptInstruction() {
+    vscode.postMessage({ type: 'getPptInstruction', backend: $('ppt-backend').value });
+  }
+
+  $('btn-ppt-generate').addEventListener('click', () => {
+    $('ppt-status').textContent = '⏳ 正在调用 LLM 改写…';
+    $('btn-ppt-save').disabled = true;
+    vscode.postMessage({
+      type: 'generatePpt',
+      backend: $('ppt-backend').value,
+      instruction: $('ppt-instruction').value,
+    });
+  });
+
+  $('btn-ppt-save').addEventListener('click', () => {
+    const markdown = $('ppt-markdown').value.trim();
+    if (!markdown) { toast('还没有生成内容', 'error'); return; }
+    $('ppt-status').textContent = '⏳ 正在保存…';
+    vscode.postMessage({ type: 'savePpt', backend: $('ppt-backend').value, markdown });
+  });
+
   // ── LLM 配置 ──────────────────────────────────────────
   let editingProfileId = '';
   $('llm-profile').addEventListener('change', () => loadProfile($('llm-profile').value));
@@ -550,6 +576,30 @@
       case 'copyError': {
         $('ai-status').textContent = '❌ ' + (msg.message || '生成失败');
         toast('生成失败：' + (msg.message || ''), 'error');
+        break;
+      }
+      case 'pptInstruction': {
+        $('ppt-instruction').value = msg.instruction || '';
+        break;
+      }
+      case 'pptGenerating': {
+        $('ppt-status').textContent = '⏳ 正在调用 LLM 改写…';
+        break;
+      }
+      case 'pptResult': {
+        $('ppt-markdown').value = msg.markdown || '';
+        $('btn-ppt-save').disabled = false;
+        $('ppt-status').textContent = '✅ 改写完成，可编辑后保存';
+        break;
+      }
+      case 'pptError': {
+        $('ppt-status').textContent = '❌ ' + (msg.message || '生成失败');
+        toast('PPT 生成失败：' + (msg.message || ''), 'error');
+        break;
+      }
+      case 'pptSaved': {
+        $('ppt-status').textContent = '✅ 已保存：' + msg.path;
+        toast('✅ 已生成 ' + msg.path);
         break;
       }
       case 'llmConfig': {

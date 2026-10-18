@@ -22,6 +22,7 @@
 | 📋 复制到小红书 | 移动端友好的内联样式长文 |
 | 💾 导出 HTML | 生成独立 HTML 文件（KaTeX 字体 base64 内联，离线可开） |
 | 📱 小红书长图 | 面板内 html2canvas 渲染，智能在空白行切片为 1080×1440 长图，2× 高清，无需安装浏览器 |
+| 🎬 导出 PPT | AI 把长文改写成 **Slidev / Marp** 演示文稿，自动补 front matter，保存为 `<name>-slides.md` / `<name>-marp.md` |
 | 🤖 AI 文案 | 小红书笔记 / Twitter 串推；OpenAI 兼容接口（DeepSeek、硅基流动、OpenRouter、Groq、Ollama、OpenAI…） |
 | ⚡ 本地提取 | 不调模型也能离线生成标题 + 正文 + 标签（n-gram 关键词 + 导语抽取） |
 | 🎨 14 套主题 | 微信经典 / Claude / macOS / 深夜极客 / 知乎 / 极简黑白 / 春日清新 / 学术 / 小红书 / Notion / Claude Pro / Medium / 科技博客 / 简约蓝 |
@@ -31,7 +32,7 @@
 ### 暂未包含（原项目另有 Electron / 网页版 / CLI 及自动发布）
 
 - Playwright 自动发布到小红书 / 知乎 / Twitter（涉及登录态、验证码、平台风控，稳定性差，本项目默认只做「复制 + 长图」，最后一步由你手动发）
-- PPT（Slidev / Marp / Pandoc）、Word 导出
+- PPT（Pandoc PPTX）、Word 导出
 - 封面生成
 
 ---
@@ -73,6 +74,15 @@ npm run test:package # 打包 VSIX → 解压 → 对发布产物跑测试（验
 - **手机自适应大字**：36px 起的大字体排版，适合纯文字笔记（可调 20–60px）
 
 点「📸 生成预览」，满意后「💾 一键导出全部」，图片保存到 `<文件名>_xhs/` 目录。
+
+### 导出 PPT
+
+工具栏 `PPT` → 选后端（Slidev / Marp）→ 可编辑 prompt → `AI 改写` → 检查/编辑 Markdown → `保存 .md`。
+
+文件写入 md 同目录，并自动补 front matter：
+
+- Slidev → `<name>-slides.md`（`theme: default`）
+- Marp → `<name>-marp.md`（`marp: true`、`paginate: true`、16:9）
 
 ### AI 文案
 

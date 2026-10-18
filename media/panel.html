@@ -48,6 +48,11 @@
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
       <circle cx="12" cy="13" r="4"/>
     </symbol>
+    <symbol id="i-presentation" viewBox="0 0 24 24">
+      <rect x="2" y="3" width="20" height="14" rx="2"/>
+      <line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </symbol>
     <symbol id="i-download" viewBox="0 0 24 24">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
       <polyline points="7 10 12 15 17 10"/>
@@ -100,6 +105,9 @@
       <button class="btn" id="btn-xhs" title="导出小红书 1080×1440 长图">
         <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><span class="btn-label">长图导出</span>
       </button>
+      <button class="btn" id="btn-ppt" title="把文章改写为 Slidev / Marp 演示文稿">
+        <svg class="icon" aria-hidden="true"><use href="#i-presentation"/></svg><span class="btn-label">PPT</span>
+      </button>
       <button class="btn" id="btn-ai" title="用 LLM 生成小红书 / Twitter 文案">
         <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 文案</span>
       </button>
@@ -150,6 +158,41 @@
           </button>
         </div>
         <div class="xhs-output" id="xhs-output"><p class="hint">还没有生成图片。</p></div>
+      </div>
+    </aside>
+
+    <!-- PPT 导出面板 -->
+    <aside class="side-panel" id="panel-ppt" hidden>
+      <div class="panel-head">
+        <span><svg class="icon" aria-hidden="true"><use href="#i-presentation"/></svg>PPT 导出</span>
+        <button class="panel-close" data-close="panel-ppt" title="关闭" aria-label="关闭"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>后端</span>
+          <select id="ppt-backend">
+            <option value="slidev">Slidev（视觉最佳）</option>
+            <option value="marp">Marp（轻量）</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>改写指令（可编辑 prompt）</span>
+          <textarea id="ppt-instruction" rows="6" spellcheck="false"></textarea>
+        </label>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-ppt-generate">
+            <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 改写</span>
+          </button>
+          <button class="btn" id="btn-ppt-save" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span class="btn-label">保存 .md</span>
+          </button>
+        </div>
+        <div id="ppt-status" class="hint"></div>
+        <label class="field">
+          <span>生成的 Markdown（可编辑）</span>
+          <textarea id="ppt-markdown" rows="14" spellcheck="false" placeholder="点「AI 改写」后，这里会出现 Slidev / Marp 的 Markdown"></textarea>
+        </label>
+        <p class="hint">保存时自动补 front matter：Slidev → <code>theme: default</code>；Marp → <code>marp: true</code>。文件写入 md 同目录：<code>&lt;name&gt;-slides.md</code> / <code>&lt;name&gt;-marp.md</code>。</p>
       </div>
     </aside>
 

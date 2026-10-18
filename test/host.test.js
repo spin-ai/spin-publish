@@ -140,6 +140,28 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
   assert.strictEqual(last('xhsCapture').containerClass, 'xhs-capture', 'adaptive 容器类错误');
   console.log('✓ getXhsCapture(adaptive)');
 
+  await messageHandler({ type: 'getPptInstruction', backend: 'slidev' }); await wait();
+  assert.ok(last('pptInstruction').instruction.includes('Slidev'), 'Slidev prompt 缺失');
+  await messageHandler({ type: 'getPptInstruction', backend: 'marp' }); await wait();
+  assert.ok(last('pptInstruction').instruction.includes('Marp'), 'Marp prompt 缺失');
+  console.log('✓ getPptInstruction(slidev / marp)');
+
+  const pptBody = '# 封面\n\n---\n\n# 第二页\n\n- 要点 A\n- 要点 B';
+  await messageHandler({ type: 'savePpt', backend: 'slidev', markdown: pptBody }); await wait();
+  const slidesPath = path.join(os.tmpdir(), 'sp-host-test-slides.md');
+  assert.ok(fs.existsSync(slidesPath), 'Slidev 文件未生成');
+  const slides = fs.readFileSync(slidesPath, 'utf8');
+  assert.ok(slides.startsWith('---\ntheme: default'), 'Slidev front matter 缺失');
+  assert.ok(slides.includes('# 第二页'), 'Slidev 内容丢失');
+
+  await messageHandler({ type: 'savePpt', backend: 'marp', markdown: '---\nmarp: true\n---\n\n# A' }); await wait();
+  const marpPath = path.join(os.tmpdir(), 'sp-host-test-marp.md');
+  assert.ok(fs.existsSync(marpPath), 'Marp 文件未生成');
+  const marp = fs.readFileSync(marpPath, 'utf8');
+  assert.strictEqual((marp.match(/^---$/gm) || []).length, 2, 'Marp 应只保留一组 front matter');
+  assert.ok(marp.includes('marp: true') && marp.includes('# A'), 'Marp 内容异常');
+  console.log('✓ savePpt（front matter + 剥离旧 front matter）');
+
   await messageHandler({ type: 'generateCopy', platform: 'xiaohongshu', local: true }); await wait();
   assert.ok(last('copyResult').data.title, '本地文案提取失败');
   console.log('✓ 本地文案提取');

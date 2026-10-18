@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.0.4
+
+### 新功能
+
+- 导出 PPT：把长文交给 LLM 改写成 **Slidev / Marp** 演示文稿
+- 面板新增「PPT」入口与侧栏：后端选择、可编辑 prompt、结果可编辑
+- 保存时自动补 front matter（Slidev `theme: default`；Marp `marp: true` / 16:9 / 分页）
+- 输出 `<name>-slides.md` / `<name>-marp.md`，并剥离 LLM 误带的旧 front matter
+- 复用 LLM 多配置；未配置 Key 时给出可操作错误提示
 
 ### 开发工作流
 
