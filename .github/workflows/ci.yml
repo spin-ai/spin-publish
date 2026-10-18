@@ -38,6 +38,9 @@ jobs:
       - name: Unit + extension-host tests
         run: npm test
 
+      - name: Python skill tests (detector)
+        run: python3 -m unittest discover -s publishers/tests -p "test_detector.py" -v
+
       - name: Packaged-artifact tests (VSIX)
         run: npm run test:package
 

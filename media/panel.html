@@ -78,6 +78,13 @@
       <line x1="18" y1="6" x2="6" y2="18"/>
       <line x1="6" y1="6" x2="18" y2="18"/>
     </symbol>
+    <symbol id="i-humanize" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
   </svg>
 
   <!-- ── 工具栏 ─────────────────────────────────────────── -->
@@ -107,6 +114,9 @@
       </button>
       <button class="btn" id="btn-ppt" title="把文章改写为 Slidev / Marp 演示文稿">
         <svg class="icon" aria-hidden="true"><use href="#i-presentation"/></svg><span class="btn-label">PPT</span>
+      </button>
+      <button class="btn" id="btn-humanize" title="检测并改写文章的 AI 味（支持全文 / 选中片段）">
+        <svg class="icon" aria-hidden="true"><use href="#i-humanize"/></svg><span class="btn-label">去 AI 味</span>
       </button>
       <button class="btn" id="btn-ai" title="用 LLM 生成小红书 / Twitter 文案">
         <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 文案</span>
@@ -193,6 +203,52 @@
           <textarea id="ppt-markdown" rows="14" spellcheck="false" placeholder="点「AI 改写」后，这里会出现 Slidev / Marp 的 Markdown"></textarea>
         </label>
         <p class="hint">保存时自动补 front matter：Slidev → <code>theme: default</code>；Marp → <code>marp: true</code>。文件写入 md 同目录：<code>&lt;name&gt;-slides.md</code> / <code>&lt;name&gt;-marp.md</code>。</p>
+      </div>
+    </aside>
+
+    <!-- 去 AI 味面板 -->
+    <aside class="side-panel" id="panel-humanize" hidden>
+      <div class="panel-head">
+        <span><svg class="icon" aria-hidden="true"><use href="#i-humanize"/></svg>去 AI 味</span>
+        <button class="panel-close" data-close="panel-humanize" title="关闭" aria-label="关闭"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="scope-row">
+          <label class="radio"><input type="radio" name="humanize-scope" value="document" checked> 全文</label>
+          <label class="radio"><input type="radio" name="humanize-scope" value="selection"> 当前选中 <em id="humanize-sel-hint"></em></label>
+        </div>
+        <p class="hint">「当前选中」读取编辑器里的选区。先在 Markdown 里选中一段文字，再点「检测 AI 味」或「AI 改写」。</p>
+        <div class="btn-row">
+          <button class="btn" id="btn-humanize-detect">
+            <svg class="icon" aria-hidden="true"><use href="#i-zap"/></svg><span class="btn-label">检测 AI 味</span>
+          </button>
+          <button class="btn btn-primary" id="btn-humanize-generate">
+            <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg><span class="btn-label">AI 改写</span>
+          </button>
+        </div>
+        <div id="humanize-status" class="hint"></div>
+        <div id="humanize-report" class="report"><p class="hint">正在检测…</p></div>
+        <label class="field">
+          <span>改写指令（可编辑 prompt）</span>
+          <textarea id="humanize-instruction" rows="9" spellcheck="false"></textarea>
+        </label>
+        <div class="btn-row">
+          <button class="btn" id="btn-humanize-reset-prompt">恢复检测建议</button>
+        </div>
+        <div id="humanize-result-wrap" hidden>
+          <label class="field">
+            <span>改写结果（可编辑）</span>
+            <textarea id="humanize-result" rows="16" spellcheck="false"></textarea>
+          </label>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-humanize-apply">
+              <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span class="btn-label">应用到文档</span>
+            </button>
+            <button class="btn" id="btn-humanize-save">
+              <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span class="btn-label">另存副本</span>
+            </button>
+          </div>
+        </div>
       </div>
     </aside>
 

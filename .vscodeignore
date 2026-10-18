@@ -64,3 +64,11 @@ node_modules/html2canvas/dist/html2canvas.esm.js
 .wade/
 ISSUES.md
 WADE.md
+
+# ── 内置发布技能（Python 脚本随包发布，但不能带 .venv）──────────
+publishers/**/.venv/
+publishers/**/__pycache__/
+publishers/**/*.pyc
+publishers/**/output/
+publishers/**/.requirements.sha256
+publishers/tests/
