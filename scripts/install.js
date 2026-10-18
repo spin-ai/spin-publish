@@ -16,7 +16,7 @@ const vsce = path.join(ROOT, 'node_modules', '.bin', isWin ? 'vsce.cmd' : 'vsce'
 const vsix = path.join(ROOT, `${pkg.name}-${pkg.version}.vsix`);
 
 console.log(`📦 打包 ${pkg.name}@${pkg.version} …`);
-execFileSync(vsce, ['package', '--allow-missing-repository', '--out', vsix], {
+execFileSync(vsce, ['package', '--out', vsix], {
   stdio: 'inherit',
   cwd: ROOT,
 });

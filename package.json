@@ -166,8 +166,12 @@
     "test": "node test/render.test.js && node test/host.test.js",
     "test:bundle": "npm run build && node test/render.test.js && SP_EXT_ENTRY=./dist/extension.js node test/host.test.js",
     "test:package": "node scripts/verify-package.js",
-    "package": "vsce package --allow-missing-repository",
+    "package": "vsce package",
     "install-ext": "node scripts/install.js",
     "icon": "node scripts/make-icon.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spin-ai/spin-publish.git"
   }
 }

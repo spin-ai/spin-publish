@@ -24,7 +24,7 @@ const vsce = path.join(ROOT, 'node_modules', '.bin', isWin ? 'vsce.cmd' : 'vsce'
 const vsix = path.join(tmp, 'smart-publisher.vsix');
 
 console.log('📦 打包 VSIX…');
-run(vsce, ['package', '--allow-missing-repository', '--out', vsix]);
+run(vsce, ['package', '--out', vsix]);
 
 console.log('🗂  解压 VSIX…');
 const out = path.join(tmp, 'x');
