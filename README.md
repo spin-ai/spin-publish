@@ -122,6 +122,18 @@ dist/extension.js     运行时入口（构建产物，已内联 marked/cheerio/
 
 ---
 
+## 开发工作流（WADE）
+
+本项目使用 [WADE](https://github.com/ivanviragine/wade)（`wade-cli`）管理任务与 AI 实现会话：
+
+- 任务源：`ISSUES.md`（Markdown provider，标签需包含 `feature-plan`）
+- `wade task list` / `wade task read 2` 查看 backlog
+- `wade plan` → `wade 2` → `wade implementation-session done` 完成一个任务
+
+配置见 `.wade.yml`，完整说明见项目根目录的 `WADE.md`。WADE 相关文件不会打进 VSIX。
+
+---
+
 ## 致谢与许可
 
 本项目基于 [marsggbo/markdown2anything](https://github.com/marsggbo/markdown2anything)（MIT License，Copyright © marsggbo）的渲染内核重做：

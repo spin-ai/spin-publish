@@ -1,0 +1,43 @@
+version: 2
+project:
+  main_branch: main
+  issue_label: feature-plan
+  worktrees_dir: ../.worktrees/smart-publisher
+  branch_prefix: feat
+  merge_strategy: PR
+ai:
+  default_tool: opencode
+models:
+  opencode:
+    easy:
+      model: anthropic/claude-haiku-4.5
+      effort: null
+    medium:
+      model: anthropic/claude-sonnet-4.6
+      effort: null
+    complex:
+      model: anthropic/claude-sonnet-4.6
+      effort: null
+    very_complex:
+      model: anthropic/claude-opus-4.7
+      effort: null
+provider:
+  name: markdown
+  settings:
+    path: ISSUES.md
+hooks: {}
+bot_review:
+  auto_trigger: false
+  offer_on_done: true
+  arrival_timeout: 300
+  ack_timeout: 900
+  bots:
+  - name: coderabbit
+    trigger: '@coderabbitai review'
+    enabled: true
+  - name: codex
+    trigger: '@codex review'
+    enabled: true
+  - name: bugbot
+    trigger: bugbot run
+    enabled: true

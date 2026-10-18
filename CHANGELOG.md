@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### 开发工作流
+
+- 接入 [WADE](https://github.com/ivanviragine/wade)（`wade-cli 1.2.16`）：AI 驱动工程工作流
+- 任务源采用 Markdown provider → `ISSUES.md`（含 7 个 backlog：#1~#7）
+- worktree 目录隔离到 `../.worktrees/smart-publisher`；AI 工具检测为 `opencode`
+- 新增 `WADE.md` 接入说明；WADE 文件已从 VSIX 排除
+
 ## 1.0.3
 
 - 工具栏 / 侧栏图标由 emoji 换成统一线性 SVG（`currentColor`，跟随 VS Code 主题色）

@@ -58,3 +58,9 @@ node_modules/html2canvas/dist/html2canvas.esm.js
 
 # ── sourcemap ──────────────────────────────────────────────────────
 **/*.map
+
+# ── WADE（开发期工具，不随扩展发布）──────────────────────────────
+.wade.yml
+.wade/
+ISSUES.md
+WADE.md
