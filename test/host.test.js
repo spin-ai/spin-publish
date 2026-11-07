@@ -28,8 +28,23 @@ const gState = new Map();
 const vscode = {
   ViewColumn: { Beside: 2 },
   ConfigurationTarget: { Global: 1 },
+  ProgressLocation: { Notification: 15 },
+  TextEditorRevealType: { InCenter: 2 },
   RelativePattern: class { constructor(base, pat) { this.base = base; this.pattern = pat; } },
   Uri: { file: (p) => ({ fsPath: p }), parse: (s) => ({ fsPath: s }) },
+  Position: class { constructor(line, character, offset) { this.line = line; this.character = character; this.offset = offset; } },
+  Range: class {
+    constructor(start, end) { this.start = start; this.end = end; }
+    get isEmpty() { return this.start.offset === this.end.offset; }
+  },
+  Selection: class {
+    constructor(anchor, active) { this.anchor = anchor; this.active = active; this.start = anchor; this.end = active; }
+    get isEmpty() { return this.start.offset === this.end.offset; }
+  },
+  WorkspaceEdit: class {
+    constructor() { this._edits = []; }
+    replace(uri, range, newText) { this._edits.push({ uri, range, newText }); }
+  },
   commands: {
     _cmds: {},
     registerCommand(n, cb) { this._cmds[n] = cb; return { dispose() {} }; },
@@ -44,9 +59,30 @@ const vscode = {
     },
     onDidChangeTextDocument() { return { dispose() {} }; },
     createFileSystemWatcher() { return { onDidChange() {}, dispose() {} }; },
+    async openTextDocument(uri) {
+      const p = uri.fsPath || uri;
+      const doc = {
+        uri: { fsPath: p },
+        getText: () => fs.readFileSync(p, 'utf8'),
+        positionAt: (offset) => new vscode.Position(0, offset, offset),
+        offsetAt: (pos) => (pos.offset !== undefined ? pos.offset : pos.character),
+      };
+      return doc;
+    },
+    async applyEdit(edit) {
+      for (const item of edit._edits || []) {
+        const p = item.uri.fsPath;
+        const text = fs.readFileSync(p, 'utf8');
+        const start = item.range.start.offset || 0;
+        const end = item.range.end.offset === undefined ? text.length : item.range.end.offset;
+        fs.writeFileSync(p, text.slice(0, start) + item.newText + text.slice(end), 'utf8');
+      }
+      return true;
+    },
   },
   window: {
     activeTextEditor: undefined,
+    visibleTextEditors: [],
     onDidChangeTextEditorSelection() { return { dispose() {} }; },
     createWebviewPanel() {
       const panel = {
@@ -67,8 +103,14 @@ const vscode = {
     showInformationMessage: async () => undefined,
     showWarningMessage: async () => undefined,
     showErrorMessage: async () => undefined,
+    showQuickPick: async () => undefined,
+    showInputBox: async () => undefined,
+    showOpenDialog: async () => undefined,
+    withProgress: async (_opts, task) => task({ report() {} }, { onCancellationRequested() { return { dispose() {} }; } }),
+    createTerminal() { return { show() {}, sendText() {} }; },
+    terminals: [],
   },
-  env: { openExternal() {} },
+  env: { openExternal() {}, clipboard: { writeText: async () => {} } },
 };
 
 const context = {
@@ -100,6 +142,17 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
 (async () => {
   assert.ok(vscode.commands._cmds['smart-publisher.preview'], 'preview 命令未注册');
   assert.ok(vscode.commands._cmds['smart-publisher.exportHtml'], 'exportHtml 命令未注册');
+  for (const cmd of [
+    'smart-publisher.humanize',
+    'smart-publisher.aiRewriteSelection',
+    'smart-publisher.publishZhihu',
+    'smart-publisher.publishToutiao',
+    'smart-publisher.publisherLogin',
+    'smart-publisher.publisherStatus',
+  ]) {
+    assert.ok(vscode.commands._cmds[cmd], `命令未注册: ${cmd}`);
+  }
+  console.log('✓ 命令注册（预览 / 导出 / 去 AI 味 / 选区改写 / 发布）');
 
   vscode.commands._cmds['smart-publisher.preview']({ fsPath: mdPath });
   assert.ok(messageHandler, 'webview 消息处理器未注册');
@@ -117,6 +170,11 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
     'node_modules/highlight.js/styles/github.css',
     'node_modules/highlight.js/styles/github.min.css',
     'node_modules/html2canvas/dist/html2canvas.min.js',
+    'publishers/zhihu-publisher/scripts/run.py',
+    'publishers/zhihu-publisher/scripts/publisher.py',
+    'publishers/toutiao-publisher/scripts/run.py',
+    'publishers/toutiao-publisher/scripts/publisher.py',
+    'publishers/humanize-writing/scripts/detector.py',
   ]) {
     assert.ok(fs.existsSync(path.join(ROOT, rel)), `缺少运行时资源: ${rel}`);
   }
@@ -174,6 +232,55 @@ const last = (t) => [...posted].reverse().find((m) => m.type === t);
   await messageHandler({ type: 'fetchImageBase64', url: 'http://127.0.0.1:1/x.png', reqId: 'r1' }); await wait(200);
   assert.strictEqual(last('imageBase64Result').dataUrl, null, '失效图片应降级为 null');
   console.log('✓ fetchImageBase64 失败降级');
+
+  // ── 去 AI 味：检测 + 应用 ──
+  fs.writeFileSync(mdPath, [
+    '# 在当今快速发展的时代',
+    '',
+    '在当今快速发展的时代，随着 AI 技术的普及，值得注意的是，首先，我们要赋能业务，形成闭环。',
+    '',
+    '这不仅极大地提升了效率，而且显著地降低了成本。总而言之，希望本文对你有帮助。',
+  ].join('\n'), 'utf8');
+  await messageHandler({ type: 'humanizeDetect', scope: 'document' }); await wait();
+  const reportMsg = last('humanizeReport');
+  assert.ok(reportMsg, '未返回 humanizeReport');
+  assert.ok(reportMsg.report.total_hits >= 4, 'AI 味规则命中数过少');
+  assert.ok(reportMsg.report.score > 0, 'AI 味分数应大于 0');
+  assert.ok(reportMsg.defaultInstruction.includes('红线'), '默认改写指令缺少红线部分');
+  console.log('✓ humanizeDetect（整篇）');
+
+  // ── 去 AI 味：选中片段检测 + 替换 ──
+  const selectionText = fs.readFileSync(mdPath, 'utf8');
+  const selectionDoc = {
+    uri: { fsPath: mdPath },
+    getText: (range) => (range
+      ? selectionText.slice(range.start.offset, range.end.offset)
+      : selectionText),
+    offsetAt: (pos) => pos.offset,
+    positionAt: (offset) => new vscode.Position(0, offset, offset),
+  };
+  vscode.window.visibleTextEditors = [{
+    document: selectionDoc,
+    selection: new vscode.Selection(
+      new vscode.Position(0, 0, 0),
+      new vscode.Position(0, 7, 7),
+    ),
+    revealRange() {},
+  }];
+  await messageHandler({ type: 'humanizeDetect', scope: 'selection' }); await wait();
+  const selMsg = last('humanizeReport');
+  assert.strictEqual(selMsg.scope, 'selection', '选区检测应返回 selection scope');
+  assert.ok(selMsg.label.includes('选中片段'), '选区标签缺失');
+  await messageHandler({ type: 'humanizeApply', scope: 'selection', result: '改写后的句子' }); await wait();
+  assert.ok(fs.readFileSync(mdPath, 'utf8').startsWith('改写后的句子'), '选区替换失败');
+  vscode.window.visibleTextEditors = [];
+  console.log('✓ humanizeDetect / humanizeApply（选中片段）');
+
+  await messageHandler({ type: 'humanizeDetect', scope: 'document' }); await wait();
+  await messageHandler({ type: 'humanizeApply', scope: 'document', result: '# 干净标题\n\n这是一段人写的文字。' }); await wait();
+  assert.ok(last('humanizeApplied'), '未返回 humanizeApplied');
+  assert.ok(fs.readFileSync(mdPath, 'utf8').includes('这是一段人写的文字'), 'humanizeApply 未替换文档');
+  console.log('✓ humanizeApply（整篇替换）');
 
   ext.deactivate();
   console.log('\n🎉 扩展宿主测试全部通过');
