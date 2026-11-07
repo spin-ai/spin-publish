@@ -44,6 +44,7 @@ from config import (
     IMPORT_BUTTON_SELECTOR,
     IMPORT_DOC_BUTTON_SELECTOR,
     IMPORT_FILE_INPUT_SELECTOR,
+    IMPORT_PARSE_TIMEOUT,
     MODAL_BACKDROP_SELECTOR,
     PAGE_LOAD_TIMEOUT,
     STATE_FILE,
@@ -206,38 +207,139 @@ def _empty_editor(page) -> bool:
     page.keyboard.press("Backspace")
     time.sleep(0.8)
     stats = _editor_stats(page)
-    return stats and stats["textLength"] <= 1 and stats["img"] == 0
+    return bool(stats) and stats["textLength"] <= 1 and stats["img"] == 0
+
+
+def _editor_is_empty(page) -> bool:
+    stats = _editor_stats(page)
+    return bool(stats) and stats["textLength"] <= 1 and stats["img"] == 0
+
+
+def _import_dialog_open(page) -> bool:
+    try:
+        return page.locator(IMPORT_FILE_INPUT_SELECTOR).count() > 0
+    except Exception:
+        return False
+
+
+def _open_import_dialog(page, timeout=15) -> bool:
+    """Open 导入 -> 导入文档 and wait for the dialog's Markdown file input.
+
+    The editor's toolbar button only reveals a menu; the actual file input is
+    mounted with the 导入文档 modal. Do not fall back to any other file input on
+    the page (the editor has a resident attachment input that also accepts
+    '.md' and would turn the article into a file card instead).
+    """
+    if _import_dialog_open(page):
+        return True
+
+    print("  Opening the import dialog (导入 -> 导入文档)...")
+    if not StealthUtils.click_with_fallback(
+        page.locator(IMPORT_BUTTON_SELECTOR).first, "导入 button"
+    ):
+        return False
+
+    deadline = time.time() + timeout
+    doc_clicked = False
+    while time.time() < deadline:
+        if not doc_clicked and page.locator(IMPORT_DOC_BUTTON_SELECTOR).count() > 0:
+            if not StealthUtils.click_with_fallback(
+                page.locator(IMPORT_DOC_BUTTON_SELECTOR).first, "导入文档 menu item"
+            ):
+                return False
+            doc_clicked = True
+        if _import_dialog_open(page):
+            return True
+        time.sleep(0.5)
+
+    print("  The 导入文档 dialog did not expose a Markdown file input.")
+    return False
+
+
+def _import_dialog_text(page) -> str:
+    try:
+        return page.evaluate(
+            """() => {
+                const nodes = document.querySelectorAll('.Modal-content');
+                return Array.from(nodes).map((n) => n.innerText || '').join('\\n');
+            }"""
+        )
+    except Exception:
+        return ""
 
 
 def _import_markdown(page, import_file: Path) -> bool:
     page.locator(EDITOR_SELECTOR).first.click()
     time.sleep(0.3)
 
-    import_input = page.locator(IMPORT_FILE_INPUT_SELECTOR)
-    if import_input.count() == 0:
-        print("  Opening toolbar import menu...")
-        if not StealthUtils.click_with_fallback(
-            page.locator(IMPORT_BUTTON_SELECTOR).first, "导入 button"
-        ):
-            return False
-        time.sleep(0.8)
-        if page.locator(IMPORT_DOC_BUTTON_SELECTOR).count() > 0:
-            StealthUtils.click_with_fallback(
-                page.locator(IMPORT_DOC_BUTTON_SELECTOR).first, "导入文档 menu item"
-            )
-            time.sleep(0.8)
+    if not _open_import_dialog(page):
+        return False
 
-    import_input = page.locator(IMPORT_FILE_INPUT_SELECTOR).first
-    import_input.set_input_files(str(import_file))
+    page.locator(IMPORT_FILE_INPUT_SELECTOR).first.set_input_files(str(import_file))
     print("  Import file submitted, waiting for the editor to parse...")
-    time.sleep(EDITOR_SETTLE_SECONDS + 2)
     return True
 
 
+def _wait_imported(page, timeout=IMPORT_PARSE_TIMEOUT) -> dict:
+    """Wait until the imported document has been parsed into the editor."""
+    deadline = time.time() + timeout
+    last_stats = None
+    last_report = time.time()
+    last_length = None
+    stable_ticks = 0
+    error_markers = ("导入失败", "解析失败", "文件过大", "格式不支持", "上传失败")
+
+    while time.time() < deadline:
+        stats = _editor_stats(page)
+        last_stats = stats
+        dialog_open = page.locator(MODAL_BACKDROP_SELECTOR).count() > 0
+
+        if stats and stats["textLength"] > 10 and not dialog_open:
+            # Require the parsed length to stop changing so verification does not
+            # run against a half-inserted document.
+            length = stats["textLength"]
+            stable_ticks = stable_ticks + 1 if length == last_length else 0
+            last_length = length
+            if stable_ticks >= 2:
+                return stats
+        else:
+            last_length = None
+            stable_ticks = 0
+
+        dialog_text = _import_dialog_text(page) if dialog_open else ""
+        if any(marker in dialog_text for marker in error_markers):
+            print(f"  Import dialog reported a problem: {dialog_text.strip()[:200]}")
+            return stats
+
+        now = time.time()
+        if now - last_report > 10:
+            last_report = now
+            print(f"  Still waiting for the import parser... stats={stats} dialog={dialog_open}")
+        time.sleep(1)
+
+    return last_stats or _editor_stats(page)
+
+
 def _verify_import(page, article: PreparedArticle) -> bool:
-    stats = _editor_stats(page)
+    stats = _wait_imported(page)
     if not stats or stats["textLength"] < 10:
+        editor_text = ""
+        try:
+            editor_text = page.evaluate(
+                """(selector) => {
+                    const editor = document.querySelector(selector);
+                    return editor ? (editor.innerText || '').slice(0, 200) : '';
+                }""",
+                EDITOR_SELECTOR,
+            )
+        except Exception:
+            pass
         print(f"  Import verification failed: editor stats {stats}")
+        if article.import_file.name in (editor_text or ""):
+            print(
+                "  The Markdown was attached as a file card instead of being imported. "
+                "Make sure the 导入文档 dialog's file input is used."
+            )
         return False
     problems = []
     if stats["img"] != 0:
@@ -249,11 +351,16 @@ def _verify_import(page, article: PreparedArticle) -> bool:
 
     if article.first_sentence:
         occurrences = page.evaluate(
-            """(args) => {
+            r"""(args) => {
                 const editor = document.querySelector(args.editor);
                 if (!editor) return -1;
-                const text = editor.innerText || editor.textContent || '';
-                return text.split(args.sentence).length - 1;
+                const normalize = (value) => (value || '')
+                    .replace(/[\u200b\u200c\u200d\ufeff]/g, '')
+                    .replace(/\s+/g, ' ');
+                const text = normalize(editor.innerText || editor.textContent || '');
+                const sentence = normalize(args.sentence);
+                if (!sentence) return 1;
+                return text.split(sentence).length - 1;
             }""",
             {"editor": EDITOR_SELECTOR, "sentence": article.first_sentence},
         )
@@ -272,14 +379,20 @@ def _verify_import(page, article: PreparedArticle) -> bool:
 
 def _place_caret_after_anchor(page, anchor_text: str, occurrence: int) -> bool:
     placed = page.evaluate(
-        """(args) => {
+        r"""(args) => {
             const editor = document.querySelector('.public-DraftEditor-content');
             if (!editor) return false;
+            const normalize = (value) => (value || '')
+                .replace(/[\u200b\u200c\u200d\ufeff]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const anchor = normalize(args.anchor);
+            if (!anchor) return false;
             const blocks = editor.querySelectorAll('[data-block="true"]');
             let seen = 0;
             for (const block of blocks) {
-                const text = block.textContent || '';
-                if (text.includes(args.anchor)) {
+                const text = normalize(block.textContent);
+                if (text.includes(anchor)) {
                     if (seen === args.occurrence) {
                         block.scrollIntoView({ block: 'center' });
                         const range = document.createRange();
@@ -547,7 +660,14 @@ def publish(
                 return PublishResult(
                     False, "import_failed", "Could not submit the import file"
                 )
-            if not _verify_import(page, article):
+            verified = _verify_import(page, article)
+            if not verified and _editor_is_empty(page):
+                print("  Editor is still empty; retrying the import once...")
+                _wait_modal_gone(page)
+                verified = _import_markdown(
+                    page, article.import_file
+                ) and _verify_import(page, article)
+            if not verified:
                 return PublishResult(
                     False,
                     "import_verification_failed",

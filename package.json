@@ -2,7 +2,7 @@
   "name": "smart-publisher",
   "displayName": "smart-publisher — 一键发微信/知乎/小红书/Twitter",
   "description": "写完一篇 Markdown，一键复制到微信公众号 / 知乎 / 小红书，导出小红书长图，AI 去 AI 味与选区改写，浏览器自动发布知乎 / 今日头条。支持 LaTeX 公式、14 套主题、实时预览。",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "spin",
   "license": "MIT",
   "icon": "media/icon.png",

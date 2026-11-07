@@ -11,6 +11,8 @@ Zhihu quirks handled here (verified by the agent-workflows project):
    ordered manifest. Each manifest entry carries an ``anchor_text`` (a short,
    preferably unique substring of the block that should immediately precede the
    image) plus an ``occurrence`` index used to disambiguate duplicate anchors.
+   For an image that follows a fenced code block the anchor is the last
+   non-empty code line, because fence markers never reach the Draft.js editor.
 """
 
 import re
@@ -23,9 +25,24 @@ IMAGE_LINE_PATTERN = re.compile(
     r"^\s*!\[([^\]]*)\]\(\s*<?([^)>\s]+)>?(?:\s+[\"'][^\"']*[\"'])?\s*\)\s*$"
 )
 FENCE_PATTERN = re.compile(r"^\s*(`{3,}|~{3,})")
+# Horizontal rules are not emittable Draft.js blocks after Zhihu import, so they
+# must never be used as image anchors. An image that follows a rule should anchor
+# to the previous text/code block instead.
+HORIZONTAL_RULE_PATTERN = re.compile(r"^\s{0,3}([-*_])(?:\s*\1){2,}\s*$")
 
 ANCHOR_SHORT = 20
 ANCHOR_LONG = 45
+
+# Zhihu injects zero-width characters around inline code/links and keeps the
+# space after a blockquote marker, so anchor matching must ignore both.
+ZERO_WIDTH_PATTERN = re.compile(r"[\u200b\u200c\u200d\ufeff]")
+WHITESPACE_PATTERN = re.compile(r"\s+")
+
+
+def normalize_match_text(text: str) -> str:
+    """Normalize editor/source text for anchor comparisons."""
+    text = ZERO_WIDTH_PATTERN.sub("", text or "")
+    return WHITESPACE_PATTERN.sub(" ", text).strip()
 
 
 class MarkdownValidationError(ValueError):
@@ -128,13 +145,14 @@ def _count_headings_outside_fences(lines) -> tuple:
 
 def _pick_anchor(anchor_block: str, anchor_index: int, all_blocks) -> tuple:
     """Return (anchor_text, occurrence) for an anchor block, preferring uniqueness."""
-    anchor_block = anchor_block.strip()
+    anchor_block = normalize_match_text(anchor_block)
     if not anchor_block:
         return "", 0
 
+    blocks = [normalize_match_text(block) for block in all_blocks]
     for length in (ANCHOR_SHORT, ANCHOR_LONG, len(anchor_block)):
         candidate = anchor_block[:length]
-        matches = [i for i, block in enumerate(all_blocks) if candidate in block]
+        matches = [i for i, block in enumerate(blocks) if candidate in block]
         if len(matches) == 1:
             return candidate, 0
         if anchor_index in matches:
@@ -197,50 +215,73 @@ def prepare_zhihu_article(markdown: str, base_dir=None, title: str = "") -> Zhih
             "No title provided and the article has no leading '# heading'"
         )
 
-    # Pass 2: collect block plain-texts for anchor uniqueness checks.
-    block_texts = []
-    for kind, *payload in operations:
-        if kind != "text":
-            continue
-        plain = _block_text(payload[0])
-        if plain:
-            block_texts.append(plain)
-
-    # Pass 3: build the image manifest using the preceding block as anchor.
-    # block_cursor walks block_texts in lockstep (both passes see the same
-    # text operations in the same order), so the anchor of an image is the
-    # block at index block_cursor - 1.
-    images = []
-    last_block_text = ""
-    last_block_index = -1
-    block_cursor = 0
+    # Pass 2: collect anchor blocks in document order. Fenced code blocks are
+    # collapsed into a single anchor (their last non-empty line), so an image
+    # that follows a code fence is inserted after the whole code block rather
+    # than before it or after a stray ``` marker. Fence markers themselves are
+    # not emittable Draft.js blocks and must never be used as anchors.
+    anchor_blocks = []
+    image_sources = []  # (alt, raw_path, anchor_index_before_this_image)
+    fence_char = None
+    fence_len = 0
+    code_lines = []
     for kind, *payload in operations:
         if kind == "image":
-            alt, raw_path = payload
-            path = _resolve_image_path(raw_path, base_dir)
-            if path.startswith(("http://", "https://", "data:")):
-                raise MarkdownValidationError(
-                    f"Remote images are not supported by the Zhihu flow, "
-                    f"download it first: {path}"
-                )
-            anchor_text, occurrence = _pick_anchor(
-                last_block_text, last_block_index, block_texts
-            )
-            images.append(
-                ZhihuImage(
-                    index=len(images),
-                    path=path,
-                    alt=alt,
-                    anchor_text=anchor_text,
-                    occurrence=occurrence,
-                )
-            )
+            image_sources.append((payload[0], payload[1], len(anchor_blocks) - 1))
             continue
-        plain = _block_text(payload[0])
+
+        line = payload[0]
+        fence_match = FENCE_PATTERN.match(line)
+        if fence_match:
+            marker = fence_match.group(1)
+            if fence_char is None:
+                fence_char = marker[0]
+                fence_len = len(marker)
+            elif marker[0] == fence_char and len(marker) >= fence_len:
+                if code_lines:
+                    anchor_blocks.append(code_lines[-1].strip())
+                    code_lines = []
+                fence_char = None
+                fence_len = 0
+            continue
+
+        if fence_char is not None:
+            if line.strip():
+                code_lines.append(line)
+            continue
+
+        if HORIZONTAL_RULE_PATTERN.match(line):
+            continue
+
+        plain = _block_text(line)
         if plain:
-            last_block_text = plain
-            last_block_index = block_cursor
-            block_cursor += 1
+            anchor_blocks.append(plain)
+
+    if code_lines:
+        anchor_blocks.append(code_lines[-1].strip())
+
+    # Pass 3: build the image manifest from the anchors collected above.
+    images = []
+    for alt, raw_path, anchor_index in image_sources:
+        path = _resolve_image_path(raw_path, base_dir)
+        if path.startswith(("http://", "https://", "data:")):
+            raise MarkdownValidationError(
+                f"Remote images are not supported by the Zhihu flow, "
+                f"download it first: {path}"
+            )
+        anchor_block = anchor_blocks[anchor_index] if anchor_index >= 0 else ""
+        anchor_text, occurrence = _pick_anchor(
+            anchor_block, anchor_index, anchor_blocks
+        )
+        images.append(
+            ZhihuImage(
+                index=len(images),
+                path=path,
+                alt=alt,
+                anchor_text=anchor_text,
+                occurrence=occurrence,
+            )
+        )
 
     body_lines = [payload[0] for kind, *payload in operations if kind == "text"]
     body_md = "\n".join(body_lines).strip()
@@ -248,7 +289,7 @@ def prepare_zhihu_article(markdown: str, base_dir=None, title: str = "") -> Zhih
         raise MarkdownValidationError("Article body is empty after stripping images")
 
     h2_count, h3_count = _count_headings_outside_fences(body_lines)
-    first_sentence = block_texts[0][:30] if block_texts else ""
+    first_sentence = anchor_blocks[0][:30] if anchor_blocks else ""
 
     return ZhihuArticle(
         title=final_title,

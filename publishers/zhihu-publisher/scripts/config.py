@@ -48,13 +48,19 @@ LOGIN_TIMEOUT_MINUTES = 10
 PAGE_LOAD_TIMEOUT = 45000
 EDITOR_SETTLE_SECONDS = 3.0
 IMAGE_UPLOAD_TIMEOUT = 30
+# Large Markdown files (50KB+) need more than a few seconds to be parsed into
+# Draft.js blocks. Poll instead of relying on a fixed sleep.
+IMPORT_PARSE_TIMEOUT = 90
 
 # Editor selectors (Draft.js)
 TITLE_SELECTOR = 'textarea[placeholder*="标题"]'
 EDITOR_SELECTOR = ".public-DraftEditor-content"
 IMPORT_BUTTON_SELECTOR = 'button[aria-label="导入"]'
 IMPORT_DOC_BUTTON_SELECTOR = 'button[aria-label="导入文档"]'
-IMPORT_FILE_INPUT_SELECTOR = 'input[type=file][accept*=".md"]'
+# The editor also carries a resident attachment input whose accept list happens
+# to include '.md'. Setting files there inserts the Markdown as a file card
+# instead of importing it, so the import input must be scoped to the dialog.
+IMPORT_FILE_INPUT_SELECTOR = '.Modal-content input[type=file][accept*=".md"]'
 IMAGE_INPUT_SELECTOR = 'input[type=file][accept*="image/webp"]'
 COVER_INPUT_SELECTOR = 'input[type=file][accept=".jpeg, .jpg, .png"]'
 MODAL_BACKDROP_SELECTOR = ".Modal-backdrop"

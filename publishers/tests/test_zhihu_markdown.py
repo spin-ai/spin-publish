@@ -12,6 +12,8 @@ sys.path.insert(0, str(SKILL_SCRIPTS))
 
 from zhihu_markdown import (  # noqa: E402
     MarkdownValidationError,
+    _pick_anchor,
+    normalize_match_text,
     prepare_zhihu_article,
 )
 
@@ -113,6 +115,65 @@ class TestPrepareZhihuArticle(unittest.TestCase):
         article = prepare_zhihu_article(SAMPLE)
         self.assertTrue(article.first_sentence)
         self.assertIn("导语", article.first_sentence)
+
+    def test_image_after_code_fence_uses_last_code_line_as_anchor(self):
+        markdown = (
+            "# 标题\n\n"
+            "## 结构\n\n"
+            "```text\n"
+            "root\n"
+            "└─ leaf\n"
+            "```\n\n"
+            "![图](fig.png)\n\n"
+            "后记。\n"
+        )
+        article = prepare_zhihu_article(markdown)
+        image = article.images[0]
+        self.assertNotIn("```", image.anchor_text)
+        self.assertIn("leaf", image.anchor_text)
+
+    def test_image_after_horizontal_rule_uses_previous_text_anchor(self):
+        # Horizontal rules are stripped by the Zhihu import and cannot be
+        # located in Draft.js, so they must not become image anchors.
+        markdown = (
+            "# 标题\n\n"
+            "> 如果你只读一段，读这一段。\n\n"
+            "---\n\n"
+            "![图](fig.png)\n\n"
+            "*图注*\n\n"
+            "## 下一节\n\n"
+            "正文。\n"
+        )
+        article = prepare_zhihu_article(markdown)
+        image = article.images[0]
+        self.assertNotEqual(image.anchor_text.strip("-*_ "), "")
+        self.assertNotIn("---", image.anchor_text)
+        self.assertIn("如果你只读一段", image.anchor_text)
+
+    def test_horizontal_rule_variants_are_not_anchors(self):
+        for rule in ("---", "***", "___", "- - -", "* * *"):
+            markdown = f"# 标题\n\n段落文字。\n\n{rule}\n\n![图](fig.png)\n"
+            with self.subTest(rule=rule):
+                article = prepare_zhihu_article(markdown)
+                self.assertIn("段落文字", article.images[0].anchor_text)
+
+    def test_anchor_matching_ignores_zero_width_characters(self):
+        # Zhihu injects U+200B after inline code/links inside blockquotes.
+        editor_block = " 第一篇：\u200bARTICLE-zhihu-multi-agent-terminal.md"
+        self.assertEqual(
+            normalize_match_text(editor_block),
+            "第一篇：ARTICLE-zhihu-multi-agent-terminal.md",
+        )
+        anchor_text, occurrence = _pick_anchor(
+            "第一篇：ARTICLE-zhihu-multi-agent-terminal.md",
+            0,
+            [editor_block, "其他段落"],
+        )
+        self.assertEqual(occurrence, 0)
+        self.assertTrue(
+            "第一篇：ARTICLE-zhihu-multi-agent-terminal.md".startswith(anchor_text)
+        )
+        self.assertNotIn("\u200b", anchor_text)
 
 
 if __name__ == "__main__":
